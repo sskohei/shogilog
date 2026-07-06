@@ -34,8 +34,8 @@ insert into public.platforms (id, name, slug)
 values
     (1, '将棋ウォーズ', 'shogiwars'),
     (2, '将棋クエスト', 'shogiquest'),
-    (3, '棋桜', 'kio'),
-    (4, '81Dojo', '81dojo');
+    (3, '棋桜', 'kiou'),
+    (4, '81道場', '81dojo');
 
 -- ----------------------------------------------------------
 -- Enable Row Level Security
