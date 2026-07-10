@@ -1,7 +1,12 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+PROJECT_DIR = BACKEND_DIR.parent
 
 
 class Settings(BaseSettings):
@@ -10,7 +15,10 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(
+            PROJECT_DIR / ".env",
+            BACKEND_DIR / ".env",
+        ),
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
@@ -20,10 +28,14 @@ class Settings(BaseSettings):
     api_version: str = "1.0.0"
 
     # Supabase
-    supabase_url: str = Field(..., alias="SUPABASE_URL")
-    supabase_anon_key: str = Field(..., alias="SUPABASE_ANON_KEY")
-    supabase_service_role_key: str = Field(
-        ..., alias="SUPABASE_SERVICE_ROLE_KEY"
+    supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
+    supabase_anon_key: str | None = Field(
+        default=None,
+        alias="SUPABASE_ANON_KEY",
+    )
+    supabase_service_role_key: str | None = Field(
+        default=None,
+        alias="SUPABASE_SERVICE_ROLE_KEY",
     )
 
 
@@ -33,6 +45,3 @@ def get_settings() -> Settings:
     Return cached application settings.
     """
     return Settings()
-
-
-settings = get_settings()
