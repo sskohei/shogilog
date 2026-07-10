@@ -1,0 +1,1 @@
+"""ShogiLog backend application package."""
