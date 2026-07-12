@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt import InvalidTokenError
+from jose import JWTError
 
 from app.core.security import decode_access_token
 from app.schemas.auth import AuthUser
@@ -38,7 +38,7 @@ def get_current_user(
             detail="Invalid token payload.",
         ) from exc
 
-    except InvalidTokenError as exc:
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials.",
