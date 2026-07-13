@@ -17,13 +17,19 @@ from app.schemas.game import (
     GameUpdate,
     PlayerSide,
 )
+from app.schemas.tag import GameTagLinkRequest
 from app.services.games import GameService
+from app.services.tags import TagService
 
 router = APIRouter(prefix="/games")
 
 
 def get_game_service() -> GameService:
     return GameService()
+
+
+def get_tag_service() -> TagService:
+    return TagService()
 
 
 @router.get("", response_model=GameListResponse)
@@ -110,3 +116,27 @@ async def delete_game(
     service.delete_game(current_user.id, game_id)
 
     return MessageResponse(message="Game deleted successfully.")
+
+
+@router.post("/{game_id}/tags", response_model=MessageResponse)
+async def link_tag_to_game(
+    game_id: UUID,
+    payload: GameTagLinkRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    service: TagService = Depends(get_tag_service),
+) -> MessageResponse:
+    service.link_tag_to_game(current_user.id, game_id, payload.tag_id)
+
+    return MessageResponse(message="Tag added to game successfully.")
+
+
+@router.delete("/{game_id}/tags/{tag_id}", response_model=MessageResponse)
+async def unlink_tag_from_game(
+    game_id: UUID,
+    tag_id: UUID,
+    current_user: AuthUser = Depends(get_current_user),
+    service: TagService = Depends(get_tag_service),
+) -> MessageResponse:
+    service.unlink_tag_from_game(current_user.id, game_id, tag_id)
+
+    return MessageResponse(message="Tag removed from game successfully.")
