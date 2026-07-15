@@ -37,7 +37,7 @@ class Settings(BaseSettings):
         default=None,
         alias="SUPABASE_SERVICE_ROLE_KEY",
     )
-    jwt_secret: str | None = Field(default=None, alias="JWT_SECRET")
+    jwt_secret: str | None = Field(default=None, alias="SUPABASE_JWT_SECRET")
 
 
 @lru_cache
