@@ -40,6 +40,16 @@ class GameRepository(SupabaseRepository):
 
         return response.data or [], response.count or 0
 
+    def list_stats_by_user(self, user_id: UUID) -> list[dict]:
+        response = (
+            self.table(self.table_name)
+            .select("result, platform_id, my_opening_id")
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+
+        return response.data or []
+
     def get_by_id(self, user_id: UUID, game_id: UUID) -> dict | None:
         response = (
             self.table(self.table_name)
