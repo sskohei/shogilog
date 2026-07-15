@@ -255,6 +255,12 @@ export const fetchGames = async () => {
 
 ---
 
+## 9.3 暫定的な認証方式（AUTH-3 実装前）
+
+AUTH-3 (#12) で本物の Supabase ログインが実装されるまでの一時的な措置として、`lib/fetcher.ts` はサーバー環境変数 `DEV_AUTH_TOKEN`（backend と同じ `SUPABASE_JWT_SECRET` で手動発行した JWT）を Bearer トークンとして付与する。`BACKEND_API_BASE_URL` と合わせて `frontend/.env.local`（gitignore 済み）で設定する。この方式を前提にするのは `lib/fetcher.ts` のみとし、AUTH-3 実装時にトークン取得ロジックだけを差し替えられるようにする。
+
+---
+
 # 10. UI設計方針
 
 ## 10.1 コンポーネント設計
