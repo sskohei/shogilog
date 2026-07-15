@@ -1,0 +1,26 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { Nav } from "@/components/layout/Nav";
+
+export function Header() {
+  return (
+    <header className="border-b border-border bg-background">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+        <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
+          ShogiLog
+        </Link>
+        <div className="min-w-0 flex-1 overflow-x-auto">
+          <Nav />
+        </div>
+        <Button
+          render={<Link href="/auth/login">ログイン</Link>}
+          nativeButton={false}
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+        />
+      </div>
+    </header>
+  );
+}
