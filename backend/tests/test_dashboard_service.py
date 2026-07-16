@@ -8,10 +8,34 @@ class FakeGameRepository:
     def __init__(self) -> None:
         self.user_id = uuid4()
         self.rows: list[dict] = [
-            {"result": "win", "platform_id": 1, "my_opening_id": 6},
-            {"result": "win", "platform_id": 1, "my_opening_id": 6},
-            {"result": "lose", "platform_id": 1, "my_opening_id": 7},
-            {"result": "draw", "platform_id": 2, "my_opening_id": None},
+            {
+                "result": "win",
+                "platform_id": 1,
+                "my_opening_id": 6,
+                "side": "sente",
+                "played_at": "2026-06-10T10:00:00+00:00",
+            },
+            {
+                "result": "win",
+                "platform_id": 1,
+                "my_opening_id": 6,
+                "side": "sente",
+                "played_at": "2026-07-05T10:00:00+00:00",
+            },
+            {
+                "result": "lose",
+                "platform_id": 1,
+                "my_opening_id": 7,
+                "side": "gote",
+                "played_at": "2026-07-06T10:00:00+00:00",
+            },
+            {
+                "result": "draw",
+                "platform_id": 2,
+                "my_opening_id": None,
+                "side": "gote",
+                "played_at": "2026-07-07T10:00:00+00:00",
+            },
         ]
         self.recent: list[dict] = [
             {
@@ -94,6 +118,30 @@ def test_get_dashboard_opening_stats_excludes_null_opening():
     assert shikenbisha.win_rate == 1.0
 
 
+def test_get_dashboard_groups_side_stats():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    sente = next(s for s in data.side_stats if s.side == "sente")
+    gote = next(s for s in data.side_stats if s.side == "gote")
+
+    assert sente.win_rate == 1.0
+    assert gote.win_rate == 0.0
+
+
+def test_get_dashboard_groups_monthly_stats():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    monthly = {m.month: m.game_count for m in data.monthly_stats}
+    assert monthly == {"2026-06": 1, "2026-07": 3}
+    assert [m.month for m in data.monthly_stats] == ["2026-06", "2026-07"]
+
+
 def test_get_dashboard_includes_recent_games():
     game_repository = FakeGameRepository()
     service = make_service(game_repository)
@@ -115,4 +163,6 @@ def test_get_dashboard_handles_no_games():
     assert data.win_rate == 0.0
     assert data.platform_stats == []
     assert data.opening_stats == []
+    assert data.side_stats == []
+    assert data.monthly_stats == []
     assert data.recent_games == []

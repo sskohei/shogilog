@@ -777,6 +777,26 @@ GET /api/v1/games
         "opening_name": "四間飛車",
         "win_rate": 0.6
       }
+    ],
+    "side_stats": [
+      {
+        "side": "sente",
+        "win_rate": 0.6
+      },
+      {
+        "side": "gote",
+        "win_rate": 0.5
+      }
+    ],
+    "monthly_stats": [
+      {
+        "month": "2026-06",
+        "game_count": 12
+      },
+      {
+        "month": "2026-07",
+        "game_count": 18
+      }
     ]
   }
 }

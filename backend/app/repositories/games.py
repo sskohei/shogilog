@@ -46,7 +46,7 @@ class GameRepository(SupabaseRepository):
     def list_stats_by_user(self, user_id: UUID) -> list[dict]:
         response = (
             self.table(self.table_name)
-            .select("result, platform_id, my_opening_id")
+            .select("result, platform_id, my_opening_id, side, played_at")
             .eq("user_id", str(user_id))
             .execute()
         )

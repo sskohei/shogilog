@@ -44,6 +44,7 @@ ShogiLogフロントエンドの役割は以下です。
 |API|FastAPI|
 |Auth|Supabase Auth|
 |Data Fetching|fetch / React Query（任意）|
+|Chart|recharts|
 
 ---
 
@@ -112,7 +113,8 @@ src/
 │   │   ├── profile.ts
 │   │   ├── tags.ts
 │   │   ├── ratings.ts
-│   │   └── openings.ts
+│   │   ├── openings.ts
+│   │   └── dashboard.ts
 │
 ├── hooks/
 │   ├── useAuth.ts
@@ -283,6 +285,14 @@ export const fetchGames = async () => {
 `/games/new` は `features/games/GameForm.tsx`(Client Component)を描画する Server Component。`features/games/validation.ts` の `validateGameInput()` でフィールドバリデーションを行い、`features/games/actions.ts` の Server Action(`createGameAction`)が `createGame()`(`POST /games`)を呼び出す。成功時はレスポンスの `id` を使って作成した対局の詳細ページ(`/games/{id}`)へ `redirect` する。
 
 対局サービス(platform)の選択肢は `features/games/platforms.ts` の静的マップをそのまま利用する(Platforms API 未実装のため)。棋譜ファイルのアップロードは対応しておらず、`kifu_path` は未設定のまま登録する(署名付きアップロードURLの発行は将来対応)。
+
+---
+
+## 9.6 ダッシュボード(統計画面)
+
+`/dashboard` は `services/api/dashboard.ts` の `fetchDashboard()`(`GET /dashboard`)と `services/api/openings.ts` の `fetchOpenings()` を `Promise.all` で並列取得する Server Component。総対局数・勝率・直近対局・プラットフォーム別/戦法別/先手後手別勝率・月別対局数を表示する。
+
+グラフ描画には `recharts` を使用し、`features/dashboard/WinRateBarChart.tsx`(勝率系の棒グラフ、プラットフォーム別・戦法別・先手後手別で共通利用)と `features/dashboard/MonthlyGamesChart.tsx`(月別対局数)に切り出す。直近対局の一覧表示は `features/games/GamesTable.tsx` をそのまま再利用する。
 
 ---
 
