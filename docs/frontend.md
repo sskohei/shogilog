@@ -269,6 +269,14 @@ export const fetchGames = async () => {
 
 ---
 
+## 9.4 対局詳細ページのデータ取得・更新
+
+`/games/[id]` は `services/api/games.ts` の `fetchGame()` / `fetchGameKifuUrl()` を `Promise.all` で並列取得する Server Component。棋譜ファイルは `kifu_path` を直接返さず、バックエンドが発行する署名付きURL（`GET /games/{id}/kifu-url`、有効期限300秒）をそのつどダウンロードリンクとして表示する。
+
+メモの編集は `features/games/actions.ts` の Server Action（`updateMemoAction`）が `updateGameMemo()`（`PUT /games/{id}`）を呼び出し、成功時に `revalidatePath` で詳細ページを再検証する。ログイン系の Server Action と同様、`useActionState` を前提にした状態(`MemoFormState`)を返す。
+
+---
+
 # 10. UI設計方針
 
 ## 10.1 コンポーネント設計
@@ -293,6 +301,9 @@ UIは以下に分割します。
 features/games/GameList.tsx
 features/games/GameCard.tsx
 features/games/GameForm.tsx
+features/games/GameDetailHeader.tsx
+features/games/KifuSection.tsx
+features/games/MemoSection.tsx
 ```
 
 ---

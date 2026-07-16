@@ -10,6 +10,7 @@ const HEADERS = [
   "自分の戦法",
   "相手の戦法",
   "メモ",
+  "",
 ];
 
 export function GamesTable({

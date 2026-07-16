@@ -33,6 +33,16 @@ export type GameListResponse = {
   pagination: Pagination;
 };
 
+export type GameDataResponse = {
+  data: Game;
+};
+
+export type GameKifuUrlResponse = {
+  data: {
+    url: string | null;
+  };
+};
+
 // backend/app/schemas/game.py の GameListFilters をミラー。
 // 今回のスコープでは page/limit のみ使用し、その他はフィルタ UI 追加時（FE-5 相当）に利用する。
 export type GameListQueryParams = {

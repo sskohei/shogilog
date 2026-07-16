@@ -5,6 +5,7 @@ import { fetchGames } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
 import { EmptyState } from "@/features/games/EmptyState";
 import { ErrorState } from "@/features/games/ErrorState";
+import { getGamesErrorMessage } from "@/features/games/errors";
 import { GamesPagination } from "@/features/games/GamesPagination";
 import { GamesTable } from "@/features/games/GamesTable";
 import type { GameListResponse } from "@/types/game";
@@ -23,22 +24,6 @@ function parsePositiveInt(value: string | string[] | undefined, fallback: number
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function errorMessage(error: ApiError): string {
-  if (error.kind === "config") {
-    return error.message;
-  }
-  if (error.kind === "network") {
-    return "バックエンドに接続できませんでした。バックエンドが起動しているか確認してください。";
-  }
-  if (error.status === 401) {
-    return "認証に失敗しました。DEV_AUTH_TOKEN が正しく設定されているか確認してください。";
-  }
-  if (error.status !== undefined && error.status >= 500) {
-    return "バックエンドでエラーが発生しました。バックエンドが起動しているか確認してください。";
-  }
-  return "対局情報の取得に失敗しました。";
-}
-
 type GamesPageData =
   | { ok: true; games: GameListResponse; openingsById: Map<number, string> }
   | { ok: false; message: string };
@@ -52,7 +37,8 @@ async function loadGamesPageData(page: number, limit: number): Promise<GamesPage
     const openingsById = new Map(openings.map((opening) => [opening.id, opening.name]));
     return { ok: true, games, openingsById };
   } catch (error) {
-    const message = error instanceof ApiError ? errorMessage(error) : "対局情報の取得に失敗しました。";
+    const message =
+      error instanceof ApiError ? getGamesErrorMessage(error) : "対局情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }

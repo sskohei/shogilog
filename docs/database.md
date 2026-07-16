@@ -434,7 +434,7 @@ gamesテーブルはShogiLogの中核となるテーブルです。
 
 ユーザーが登録した対局情報を保持し、統計・検索・戦法分析などの基礎データとして利用します。
 
-Version1では棋譜データも本テーブル内に保持します。
+Version1では棋譜データ本体はテーブル内に保持せず、Supabase Storage の `kifu` バケットにファイルとして保存し、テーブルには `kifu_path` (ファイルパス)のみを保持します。棋譜ファイルの取得には署名付きURLを発行する `GET /games/{id}/kifu-url` (`docs/api.md` 12.6) を利用します。
 
 ---
 
@@ -445,18 +445,17 @@ Version1では棋譜データも本テーブル内に保持します。
 |id|UUID|NO|Primary Key|
 |user_id|UUID|NO|プロフィールID|
 |platform_id|SMALLINT|NO|対局サービス|
-|opening_id|UUID|YES|戦法|
-|title|TEXT|YES|対局タイトル|
-|opponent_name|TEXT|NO|対戦相手名|
-|is_sente|BOOLEAN|NO|先手ならtrue|
-|result|TEXT|NO|win / lose / draw|
-|ended_at|TIMESTAMPTZ|YES|対局終了日時|
-|time_control|TEXT|YES|持ち時間|
+|played_at|TIMESTAMPTZ|NO|対局日時|
+|result|game_result (ENUM)|NO|win / lose / draw|
+|side|player_side (ENUM)|NO|sente / gote|
+|my_opening_id|SMALLINT|YES|自分の戦法|
+|opponent_opening_id|SMALLINT|YES|相手の戦法|
+|rating_before|INTEGER|YES|対局前レーティング|
+|rating_after|INTEGER|YES|対局後レーティング|
+|opponent_name|TEXT|YES|対戦相手名|
+|opponent_rating|INTEGER|YES|対戦相手レーティング|
 |memo|TEXT|YES|対局メモ|
-|kif_text|TEXT|YES|KIF形式棋譜|
-|ki2_text|TEXT|YES|KI2形式棋譜|
-|csa_text|TEXT|YES|CSA形式棋譜|
-|sfen|TEXT|YES|SFEN|
+|kifu_path|TEXT|YES|Supabase Storage `kifu` バケット内の棋譜ファイルパス|
 |created_at|TIMESTAMPTZ|NO|登録日時|
 |updated_at|TIMESTAMPTZ|NO|更新日時|
 
@@ -468,7 +467,8 @@ Version1では棋譜データも本テーブル内に保持します。
 |------|------|
 |user_id|profiles.id|
 |platform_id|platforms.id|
-|opening_id|openings.id|
+|my_opening_id|openings.id|
+|opponent_opening_id|openings.id|
 
 ---
 
@@ -491,21 +491,16 @@ platform_id
     ↓
 platforms.id
 
-opening_id
+my_opening_id / opponent_opening_id
     ↓
 openings.id
 ```
 
-CHECK
+ENUM
 
 ```text
-result
-
-↓
-
-win
-lose
-draw
+result: win / lose / draw
+side: sente / gote
 ```
 
 ---
@@ -515,6 +510,7 @@ draw
 - 対局登録
 - 対局編集
 - 対局一覧
+- 対局詳細
 - 対局検索
 - 統計画面
 - ダッシュボード

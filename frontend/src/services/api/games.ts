@@ -1,5 +1,11 @@
 import { apiFetch } from "@/lib/fetcher";
-import type { GameListQueryParams, GameListResponse } from "@/types/game";
+import type {
+  Game,
+  GameDataResponse,
+  GameKifuUrlResponse,
+  GameListQueryParams,
+  GameListResponse,
+} from "@/types/game";
 
 export async function fetchGames(
   params: GameListQueryParams
@@ -21,4 +27,22 @@ export async function fetchGames(
   if (params.order !== undefined) searchParams.set("order", params.order);
 
   return apiFetch<GameListResponse>(`/games?${searchParams.toString()}`);
+}
+
+export async function fetchGame(id: string): Promise<Game> {
+  const response = await apiFetch<GameDataResponse>(`/games/${id}`);
+  return response.data;
+}
+
+export async function fetchGameKifuUrl(id: string): Promise<string | null> {
+  const response = await apiFetch<GameKifuUrlResponse>(`/games/${id}/kifu-url`);
+  return response.data.url;
+}
+
+export async function updateGameMemo(id: string, memo: string): Promise<void> {
+  await apiFetch(`/games/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ memo }),
+  });
 }

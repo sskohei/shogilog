@@ -42,6 +42,15 @@ class GameService:
 
         return game
 
+    def get_kifu_url(self, user_id: UUID, game_id: UUID) -> str | None:
+        game = self.get_game(user_id, game_id)
+        kifu_path = game.get("kifu_path")
+
+        if not kifu_path:
+            return None
+
+        return self.repository.create_signed_kifu_url(kifu_path)
+
     def create_game(self, user_id: UUID, payload: GameCreate) -> dict:
         data = payload.model_dump(mode="json")
         return self.repository.create(user_id, data)

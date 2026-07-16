@@ -1,3 +1,6 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import { ResultBadge, SideBadge } from "@/features/games/Badges";
 import { formatPlayedAt } from "@/features/games/format";
 import { getPlatformName } from "@/features/games/platforms";
@@ -37,6 +40,14 @@ export function GameRow({
       <td className="px-3 py-2 whitespace-nowrap">{opponentOpeningName}</td>
       <td className="max-w-xs truncate px-3 py-2 text-muted-foreground">
         {game.memo ?? ""}
+      </td>
+      <td className="px-3 py-2 whitespace-nowrap">
+        <Button
+          render={<Link href={`/games/${game.id}`}>詳細</Link>}
+          nativeButton={false}
+          variant="outline"
+          size="sm"
+        />
       </td>
     </tr>
   );
