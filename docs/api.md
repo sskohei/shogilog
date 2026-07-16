@@ -384,6 +384,9 @@ GET /api/v1/games
       "rating_after": 1210,
       "opponent_name": "player123",
       "opponent_rating": 1190,
+      "rank_before": null,
+      "rank_after": null,
+      "opponent_rank": null,
       "memo": "序盤優勢だった",
       "kifu_path": "user-id/game-id.kif",
       "created_at": "2026-07-05T10:10:00Z",
@@ -423,10 +426,15 @@ GET /api/v1/games
   "rating_after": 1210,
   "opponent_name": "user123",
   "opponent_rating": 1190,
+  "rank_before": null,
+  "rank_after": null,
+  "opponent_rank": null,
   "memo": "終盤で逆転",
   "kifu_path": "user-id/game-id.kif"
 }
 ```
+
+`rating_before`/`rating_after`/`opponent_rating` と `rank_before`/`rank_after`/`opponent_rank` の意味は `platform_id` によって変わる(例: 将棋ウォーズは段位+%、棋桜は段位+ポイント、将棋クエスト/81道場は数値レーティングのみで rank系は未使用)。詳細は `docs/database.md` 「レーティング関連カラムの解釈」を参照。
 
 ---
 
@@ -467,6 +475,9 @@ GET /api/v1/games
     "rating_after": 1210,
     "opponent_name": "user123",
     "opponent_rating": 1190,
+    "rank_before": null,
+    "rank_after": null,
+    "opponent_rank": null,
     "memo": "終盤で逆転",
     "kifu_path": "user-id/game-id.kif",
     "created_at": "2026-07-05T10:10:00Z",

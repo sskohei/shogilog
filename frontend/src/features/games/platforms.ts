@@ -18,3 +18,62 @@ export const PLATFORM_OPTIONS: { id: number; name: string }[] = Object.entries(
 export function isKnownPlatformId(platformId: number): boolean {
   return platformId in PLATFORM_NAMES;
 }
+
+export type RatingMetric = "rating" | "percentage" | "point";
+
+// プラットフォームごとにレーティング欄の意味が異なる。
+// 将棋ウォーズ: 段位+昇段/降段進捗(%)、棋桜: 段位+ポイント、それ以外: 数値レーティング。
+const PLATFORM_RATING_METRICS: Record<number, RatingMetric> = {
+  1: "percentage",
+  2: "rating",
+  3: "point",
+  4: "rating",
+};
+
+export function getPlatformRatingMetric(platformId: number): RatingMetric {
+  return PLATFORM_RATING_METRICS[platformId] ?? "rating";
+}
+
+export function usesRankRating(platformId: number): boolean {
+  return getPlatformRatingMetric(platformId) !== "rating";
+}
+
+export function getRatingMetricLabel(metric: RatingMetric): string {
+  if (metric === "percentage") return "%";
+  if (metric === "point") return "ポイント";
+  return "レーティング";
+}
+
+// 段位ラダー: 将棋ウォーズ(30級〜9段)、棋桜(10級〜5段)。
+const PLATFORM_RANK_LADDERS: Partial<Record<number, { maxKyu: number; maxDan: number }>> = {
+  1: { maxKyu: 30, maxDan: 9 },
+  3: { maxKyu: 10, maxDan: 5 },
+};
+
+const DAN_KANJI: Record<number, string> = {
+  1: "初段",
+  2: "二段",
+  3: "三段",
+  4: "四段",
+  5: "五段",
+  6: "六段",
+  7: "七段",
+  8: "八段",
+  9: "九段",
+};
+
+export function getRankOptions(platformId: number): string[] {
+  const ladder = PLATFORM_RANK_LADDERS[platformId];
+  if (!ladder) return [];
+
+  const kyuOptions = Array.from(
+    { length: ladder.maxKyu },
+    (_, index) => `${ladder.maxKyu - index}級`
+  );
+  const danOptions = Array.from(
+    { length: ladder.maxDan },
+    (_, index) => DAN_KANJI[index + 1]
+  );
+
+  return [...kyuOptions, ...danOptions];
+}

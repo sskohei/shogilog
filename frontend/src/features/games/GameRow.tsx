@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { ResultBadge, SideBadge } from "@/features/games/Badges";
-import { formatPlayedAt } from "@/features/games/format";
+import { formatOpponentRating, formatPlayedAt } from "@/features/games/format";
 import { getPlatformName } from "@/features/games/platforms";
 import type { Game } from "@/types/game";
 
@@ -32,8 +32,8 @@ export function GameRow({
       </td>
       <td className="px-3 py-2 whitespace-nowrap">
         {game.opponent_name ?? "—"}
-        {game.opponent_rating !== null && (
-          <span className="text-muted-foreground"> ({game.opponent_rating})</span>
+        {formatOpponentRating(game) !== null && (
+          <span className="text-muted-foreground"> ({formatOpponentRating(game)})</span>
         )}
       </td>
       <td className="px-3 py-2 whitespace-nowrap">{myOpeningName}</td>

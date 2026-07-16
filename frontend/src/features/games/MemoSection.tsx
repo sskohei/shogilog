@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { updateMemoAction } from "@/features/games/actions";
-import { initialMemoFormState } from "@/features/games/types";
+import { initialSimpleActionState } from "@/features/games/types";
 
 export function MemoSection({
   gameId,
@@ -17,7 +17,7 @@ export function MemoSection({
   const [isEditing, setIsEditing] = useState(false);
   const [state, formAction, pending] = useActionState(
     updateMemoAction.bind(null, gameId),
-    initialMemoFormState
+    initialSimpleActionState
   );
 
   // action が完了して state 参照が更新された瞬間にだけ編集モードを終了する

@@ -57,3 +57,18 @@ export async function createGame(payload: GameCreatePayload): Promise<string> {
   });
   return response.data.id;
 }
+
+export async function updateGame(
+  id: string,
+  payload: GameCreatePayload
+): Promise<void> {
+  await apiFetch(`/games/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteGame(id: string): Promise<void> {
+  await apiFetch(`/games/${id}`, { method: "DELETE" });
+}

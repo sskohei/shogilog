@@ -15,6 +15,9 @@ export type Game = {
   rating_after: number | null;
   opponent_name: string | null;
   opponent_rating: number | null;
+  rank_before: string | null;
+  rank_after: string | null;
+  opponent_rank: string | null;
   memo: string | null;
   kifu_path: string | null;
   created_at: string;
@@ -60,6 +63,9 @@ export type GameCreatePayload = {
   rating_after?: number | null;
   opponent_name?: string | null;
   opponent_rating?: number | null;
+  rank_before?: string | null;
+  rank_after?: string | null;
+  opponent_rank?: string | null;
   memo?: string | null;
 };
 

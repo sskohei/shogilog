@@ -450,14 +450,30 @@ Version1では棋譜データ本体はテーブル内に保持せず、Supabase 
 |side|player_side (ENUM)|NO|sente / gote|
 |my_opening_id|SMALLINT|YES|自分の戦法|
 |opponent_opening_id|SMALLINT|YES|相手の戦法|
-|rating_before|INTEGER|YES|対局前レーティング|
-|rating_after|INTEGER|YES|対局後レーティング|
+|rating_before|INTEGER|YES|対局前レーティング(プラットフォームにより%・ポイントとしても利用、下記参照)|
+|rating_after|INTEGER|YES|対局後レーティング(同上)|
 |opponent_name|TEXT|YES|対戦相手名|
-|opponent_rating|INTEGER|YES|対戦相手レーティング|
+|opponent_rating|INTEGER|YES|対戦相手レーティング(同上)|
+|rank_before|TEXT|YES|対局前の段位(段位制プラットフォームのみ)|
+|rank_after|TEXT|YES|対局後の段位(同上)|
+|opponent_rank|TEXT|YES|対戦相手の段位(同上)|
 |memo|TEXT|YES|対局メモ|
 |kifu_path|TEXT|YES|Supabase Storage `kifu` バケット内の棋譜ファイルパス|
 |created_at|TIMESTAMPTZ|NO|登録日時|
 |updated_at|TIMESTAMPTZ|NO|更新日時|
+
+---
+
+## レーティング関連カラムの解釈(プラットフォーム依存)
+
+`rating_before`/`rating_after`/`opponent_rating`(INTEGER)は、`platform_id` に応じて意味が変わる。段位制のプラットフォームでは `rank_before`/`rank_after`/`opponent_rank` と併用する。
+
+|platform_id|プラットフォーム|rating系カラムの意味|rank系カラム|
+|---|---|---|---|
+|1|将棋ウォーズ|昇段/降段進捗(%)|段位(30級〜9段)|
+|2|将棋クエスト|レーティング数値|未使用(NULL)|
+|3|棋桜|ポイント|段位(10級〜5段)|
+|4|81道場|レーティング数値|未使用(NULL)|
 
 ---
 

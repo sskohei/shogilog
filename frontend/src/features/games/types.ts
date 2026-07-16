@@ -1,10 +1,11 @@
 import type { GameFormFieldErrors } from "@/features/games/validation";
 
-export type MemoFormState = {
+// エラーメッセージだけを返す単純な Server Action(メモ更新・削除など)向けの共通 state。
+export type SimpleActionState = {
   error?: string;
 };
 
-export const initialMemoFormState: MemoFormState = {};
+export const initialSimpleActionState: SimpleActionState = {};
 
 export type GameFormState = {
   errors: GameFormFieldErrors;
