@@ -356,9 +356,13 @@ GET /api/v1/games
 |limit|integer|No|取得件数|
 |platform_id|integer|No|将棋サービス|
 |result|string|No|win / lose / draw|
-|opening_id|uuid|No|戦法|
-|from|datetime|No|開始日|
-|to|datetime|No|終了日|
+|side|string|No|sente / gote|
+|opening_id|integer|No|戦法(自分・相手いずれかの戦法に一致)|
+|from|datetime|No|開始日(played_at基準)|
+|to|datetime|No|終了日(played_at基準)|
+|search|string|No|opponent_name / memo の部分一致検索|
+|sort|string|No|played_at(既定) / created_at / result|
+|order|string|No|asc / desc(既定)|
 
 ---
 
@@ -369,16 +373,21 @@ GET /api/v1/games
   "data": [
     {
       "id": "uuid",
+      "user_id": "uuid",
       "platform_id": 1,
-      "opening_id": "uuid",
-      "title": "vs 速攻四間飛車",
-      "opponent_name": "player123",
-      "is_sente": true,
+      "played_at": "2026-07-05T10:00:00Z",
       "result": "win",
-      "ended_at": "2026-07-05T10:00:00Z",
-      "time_control": "10min",
+      "side": "sente",
+      "my_opening_id": 1,
+      "opponent_opening_id": 2,
+      "rating_before": 1200,
+      "rating_after": 1210,
+      "opponent_name": "player123",
+      "opponent_rating": 1190,
       "memo": "序盤優勢だった",
-      "created_at": "2026-07-05T10:10:00Z"
+      "kifu_path": "user-id/game-id.kif",
+      "created_at": "2026-07-05T10:10:00Z",
+      "updated_at": "2026-07-05T10:10:00Z"
     }
   ],
   "pagination": {
@@ -405,18 +414,17 @@ GET /api/v1/games
 ```json
 {
   "platform_id": 1,
-  "opening_id": "uuid",
-  "title": "vs 四間飛車",
-  "opponent_name": "user123",
-  "is_sente": true,
+  "played_at": "2026-07-05T10:00:00Z",
   "result": "win",
-  "ended_at": "2026-07-05T10:00:00Z",
-  "time_control": "10min",
+  "side": "sente",
+  "my_opening_id": 1,
+  "opponent_opening_id": 2,
+  "rating_before": 1200,
+  "rating_after": 1210,
+  "opponent_name": "user123",
+  "opponent_rating": 1190,
   "memo": "終盤で逆転",
-  "kif_text": "...",
-  "ki2_text": "...",
-  "csa_text": "...",
-  "sfen": "..."
+  "kifu_path": "user-id/game-id.kif"
 }
 ```
 
@@ -438,7 +446,7 @@ GET /api/v1/games
 
 ### 概要
 
-対局詳細を取得します。
+対局詳細を取得します。レスポンス形式は 12.1 の一覧要素と同一です(タグは含まれません。対局に紐づくタグは 14. Game Tags API で管理します)。
 
 ---
 
@@ -448,25 +456,21 @@ GET /api/v1/games
 {
   "data": {
     "id": "uuid",
+    "user_id": "uuid",
     "platform_id": 1,
-    "opening_id": "uuid",
-    "title": "vs 四間飛車",
-    "opponent_name": "user123",
-    "is_sente": true,
+    "played_at": "2026-07-05T10:00:00Z",
     "result": "win",
-    "ended_at": "2026-07-05T10:00:00Z",
-    "time_control": "10min",
+    "side": "sente",
+    "my_opening_id": 1,
+    "opponent_opening_id": 2,
+    "rating_before": 1200,
+    "rating_after": 1210,
+    "opponent_name": "user123",
+    "opponent_rating": 1190,
     "memo": "終盤で逆転",
-    "kif_text": "...",
-    "ki2_text": "...",
-    "csa_text": "...",
-    "sfen": "...",
-    "tags": [
-      {
-        "id": "uuid",
-        "name": "研究"
-      }
-    ]
+    "kifu_path": "user-id/game-id.kif",
+    "created_at": "2026-07-05T10:10:00Z",
+    "updated_at": "2026-07-05T10:10:00Z"
   }
 }
 ```
@@ -477,7 +481,7 @@ GET /api/v1/games
 
 ### 概要
 
-対局情報を更新します。
+対局情報を更新します。更新したいフィールドのみ送信します(部分更新)。
 
 ---
 
@@ -485,7 +489,6 @@ GET /api/v1/games
 
 ```json
 {
-  "title": "vs 四間飛車 改",
   "memo": "修正メモ",
   "result": "lose"
 }
@@ -516,6 +519,26 @@ GET /api/v1/games
 ```json
 {
   "message": "Game deleted successfully."
+}
+```
+
+---
+
+## 12.6 GET /games/{id}/kifu-url
+
+### 概要
+
+対局に紐づく棋譜ファイル(Supabase Storage の `kifu` バケットに保存)への署名付きURLを発行します。`kifu_path` が未設定の場合は `url` に `null` を返します。有効期限は300秒です。
+
+---
+
+### Response
+
+```json
+{
+  "data": {
+    "url": "https://.../storage/v1/object/sign/kifu/user-id/game-id.kif?token=..."
+  }
 }
 ```
 

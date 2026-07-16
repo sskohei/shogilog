@@ -1,9 +1,12 @@
 from uuid import UUID
 
+from storage3.exceptions import StorageApiError
 from supabase import Client
 
 from app.repositories.base import SupabaseRepository
 from app.schemas.game import GameListFilters
+
+KIFU_BUCKET = "kifu"
 
 
 class GameRepository(SupabaseRepository):
@@ -84,6 +87,16 @@ class GameRepository(SupabaseRepository):
             return None
 
         return response.data[0]
+
+    def create_signed_kifu_url(self, path: str, expires_in: int = 300) -> str | None:
+        try:
+            result = self.client.storage.from_(KIFU_BUCKET).create_signed_url(
+                path, expires_in
+            )
+        except StorageApiError:
+            return None
+
+        return result.get("signedUrl")
 
     def delete(self, user_id: UUID, game_id: UUID) -> bool:
         response = (

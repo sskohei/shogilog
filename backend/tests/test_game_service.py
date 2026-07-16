@@ -37,6 +37,7 @@ class FakeGameRepository:
             "updated_at": "2026-07-05T10:10:00+00:00",
         }
         self.updated_payload: dict | None = None
+        self.signed_url = "https://example.supabase.co/storage/v1/object/sign/kifu/test.kif"
 
     def list_by_user(self, user_id: UUID, filters: GameListFilters):
         return [self.game], 1
@@ -59,6 +60,9 @@ class FakeGameRepository:
 
     def delete(self, user_id: UUID, game_id: UUID):
         return game_id == self.game_id
+
+    def create_signed_kifu_url(self, path: str, expires_in: int = 300):
+        return self.signed_url
 
 
 def make_create_payload() -> GameCreate:
@@ -120,6 +124,35 @@ def test_get_game_raises_404_for_missing_game():
 
     with pytest.raises(HTTPException) as exc:
         service.get_game(repository.user_id, uuid4())
+
+    assert exc.value.status_code == 404
+
+
+def test_get_kifu_url_returns_none_when_kifu_path_missing():
+    repository = FakeGameRepository()
+    service = GameService(repository=repository)
+
+    url = service.get_kifu_url(repository.user_id, repository.game_id)
+
+    assert url is None
+
+
+def test_get_kifu_url_returns_signed_url_when_kifu_path_set():
+    repository = FakeGameRepository()
+    repository.game["kifu_path"] = "user-123/game-456.kif"
+    service = GameService(repository=repository)
+
+    url = service.get_kifu_url(repository.user_id, repository.game_id)
+
+    assert url == repository.signed_url
+
+
+def test_get_kifu_url_raises_404_for_missing_game():
+    repository = FakeGameRepository()
+    service = GameService(repository=repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.get_kifu_url(repository.user_id, uuid4())
 
     assert exc.value.status_code == 404
 

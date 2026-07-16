@@ -11,6 +11,8 @@ from app.schemas.game import (
     GameDataResponse,
     GameId,
     GameIdResponse,
+    GameKifuUrl,
+    GameKifuUrlResponse,
     GameListFilters,
     GameListResponse,
     GameResult,
@@ -90,6 +92,17 @@ async def get_game(
     game = service.get_game(current_user.id, game_id)
 
     return GameDataResponse(data=game)
+
+
+@router.get("/{game_id}/kifu-url", response_model=GameKifuUrlResponse)
+async def get_game_kifu_url(
+    game_id: UUID,
+    current_user: AuthUser = Depends(get_current_user),
+    service: GameService = Depends(get_game_service),
+) -> GameKifuUrlResponse:
+    url = service.get_kifu_url(current_user.id, game_id)
+
+    return GameKifuUrlResponse(data=GameKifuUrl(url=url))
 
 
 @router.put("/{game_id}", response_model=MessageResponse)

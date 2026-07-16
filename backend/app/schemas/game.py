@@ -76,6 +76,14 @@ class GameListResponse(BaseModel):
     pagination: Pagination
 
 
+class GameKifuUrl(BaseModel):
+    url: str | None
+
+
+class GameKifuUrlResponse(BaseModel):
+    data: GameKifuUrl
+
+
 class GameListFilters(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)
