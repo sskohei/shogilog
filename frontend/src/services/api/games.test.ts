@@ -9,10 +9,14 @@ vi.mock("@/lib/fetcher", () => ({
 }));
 
 import {
+  createGame,
+  deleteGame,
   fetchGame,
   fetchGameKifuUrl,
+  updateGame,
   updateGameMemo,
 } from "@/services/api/games";
+import type { GameCreatePayload } from "@/types/game";
 
 describe("fetchGame", () => {
   it("data を unwrap して返す", async () => {
@@ -54,6 +58,63 @@ describe("updateGameMemo", () => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memo: "更新後のメモ" }),
+    });
+  });
+});
+
+describe("createGame", () => {
+  it("POST で対局を作成し、作成された id を返す", async () => {
+    apiFetchMock.mockResolvedValue({ data: { id: "game-1" } });
+
+    const payload: GameCreatePayload = {
+      platform_id: 1,
+      played_at: "2026-07-05T10:00:00.000Z",
+      result: "win",
+      side: "sente",
+      memo: null,
+    };
+
+    const id = await createGame(payload);
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(id).toBe("game-1");
+  });
+});
+
+describe("updateGame", () => {
+  it("PUT で対局を更新する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    const payload: GameCreatePayload = {
+      platform_id: 1,
+      played_at: "2026-07-05T10:00:00.000Z",
+      result: "win",
+      side: "sente",
+      memo: null,
+    };
+
+    await updateGame("game-1", payload);
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  });
+});
+
+describe("deleteGame", () => {
+  it("DELETE で対局を削除する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    await deleteGame("game-1");
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1", {
+      method: "DELETE",
     });
   });
 });

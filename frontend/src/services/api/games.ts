@@ -1,7 +1,9 @@
 import { apiFetch } from "@/lib/fetcher";
 import type {
   Game,
+  GameCreatePayload,
   GameDataResponse,
+  GameIdResponse,
   GameKifuUrlResponse,
   GameListQueryParams,
   GameListResponse,
@@ -45,4 +47,28 @@ export async function updateGameMemo(id: string, memo: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ memo }),
   });
+}
+
+export async function createGame(payload: GameCreatePayload): Promise<string> {
+  const response = await apiFetch<GameIdResponse>("/games", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return response.data.id;
+}
+
+export async function updateGame(
+  id: string,
+  payload: GameCreatePayload
+): Promise<void> {
+  await apiFetch(`/games/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteGame(id: string): Promise<void> {
+  await apiFetch(`/games/${id}`, { method: "DELETE" });
 }

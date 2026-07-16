@@ -15,6 +15,9 @@ export type Game = {
   rating_after: number | null;
   opponent_name: string | null;
   opponent_rating: number | null;
+  rank_before: string | null;
+  rank_after: string | null;
+  opponent_rank: string | null;
   memo: string | null;
   kifu_path: string | null;
   created_at: string;
@@ -41,6 +44,29 @@ export type GameKifuUrlResponse = {
   data: {
     url: string | null;
   };
+};
+
+export type GameIdResponse = {
+  data: {
+    id: string;
+  };
+};
+
+export type GameCreatePayload = {
+  platform_id: number;
+  played_at: string;
+  result: GameResult;
+  side: PlayerSide;
+  my_opening_id?: number | null;
+  opponent_opening_id?: number | null;
+  rating_before?: number | null;
+  rating_after?: number | null;
+  opponent_name?: string | null;
+  opponent_rating?: number | null;
+  rank_before?: string | null;
+  rank_after?: string | null;
+  opponent_rank?: string | null;
+  memo?: string | null;
 };
 
 // backend/app/schemas/game.py の GameListFilters をミラー。

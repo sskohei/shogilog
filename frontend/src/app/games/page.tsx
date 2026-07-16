@@ -1,5 +1,7 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
+import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/fetcher";
 import { fetchGames } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
@@ -56,7 +58,14 @@ export default async function GamesPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-12">
-      <h1 className="mb-6 text-xl font-semibold">対局一覧</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold">対局一覧</h1>
+        <Button
+          render={<Link href="/games/new">対局を登録</Link>}
+          nativeButton={false}
+          size="sm"
+        />
+      </div>
       {!data.ok ? (
         <ErrorState message={data.message} />
       ) : data.games.data.length > 0 ? (
