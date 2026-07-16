@@ -1,6 +1,6 @@
 // サーバー専用モジュール。Client Component から import しないこと。
-// AUTH-3 (#12) までの暫定措置。本物の Supabase セッションが実装されたら、
-// このファイルのトークン取得ロジックだけを差し替える想定。
+import { getAccessToken } from "@/lib/supabase/server";
+
 export type ApiErrorKind = "config" | "network" | "http";
 
 export class ApiError extends Error {
@@ -15,9 +15,8 @@ export class ApiError extends Error {
   }
 }
 
-function getBackendConfig(): { baseUrl: string; token: string } {
+async function getBackendConfig(): Promise<{ baseUrl: string; token: string }> {
   const baseUrl = process.env.BACKEND_API_BASE_URL;
-  const token = process.env.DEV_AUTH_TOKEN;
 
   if (!baseUrl) {
     throw new ApiError(
@@ -25,10 +24,12 @@ function getBackendConfig(): { baseUrl: string; token: string } {
       "BACKEND_API_BASE_URL が設定されていません。frontend/.env.local を確認してください。"
     );
   }
+
+  const token = await getAccessToken();
   if (!token) {
     throw new ApiError(
       "config",
-      "DEV_AUTH_TOKEN が設定されていません。frontend/.env.local を確認してください。"
+      "ログインセッションが見つかりません。再度ログインしてください。"
     );
   }
 
@@ -53,7 +54,7 @@ async function extractErrorMessage(response: Response): Promise<string> {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const { baseUrl, token } = getBackendConfig();
+  const { baseUrl, token } = await getBackendConfig();
 
   let response: Response;
   try {

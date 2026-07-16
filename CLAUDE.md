@@ -41,7 +41,6 @@ ShogiLog は、ネット将棋の対局記録・管理・分析を行う Web ア
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `SUPABASE_ANON_KEY`
-  - `SUPABASE_JWT_SECRET`
   - `ENV`
 
 ## フロントエンド作業ルール

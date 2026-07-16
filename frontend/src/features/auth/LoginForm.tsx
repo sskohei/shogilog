@@ -58,7 +58,7 @@ export function LoginForm() {
       </div>
 
       {state.message && (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
+        <p className="text-sm text-destructive" aria-live="polite">
           {state.message}
         </p>
       )}
