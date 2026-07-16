@@ -215,13 +215,17 @@ Client Componentは以下の用途に限定します。
 
 ## 8.3 保護ルート
 
-認証が必要なページはmiddlewareで保護します。
+認証が必要なページは `frontend/src/proxy.ts` で保護します。
+
+> **Note**: このバージョンの Next.js では、従来の `middleware.ts` は `proxy.ts` に名称・規約が変更されています（`export default function proxy(request)`）。`app/` が `src/` 配下にあるため、`proxy.ts` も `frontend/src/proxy.ts` に配置します。
 
 例：
 
 - /games
 - /dashboard
 - /profile
+
+Proxy はセッションが有効かどうかの楽観的チェック（cookieの読み取りのみ）に留め、実際のデータアクセス時には各処理内で再度セッションを検証します（`lib/fetcher.ts` の `getAccessToken()` 経由）。
 
 ---
 
@@ -255,9 +259,13 @@ export const fetchGames = async () => {
 
 ---
 
-## 9.3 暫定的な認証方式（AUTH-3 実装前）
+## 9.3 認証方式
 
-AUTH-3 (#12) で本物の Supabase ログインが実装されるまでの一時的な措置として、`lib/fetcher.ts` はサーバー環境変数 `DEV_AUTH_TOKEN`（backend と同じ `SUPABASE_JWT_SECRET` で手動発行した JWT）を Bearer トークンとして付与する。`BACKEND_API_BASE_URL` と合わせて `frontend/.env.local`（gitignore 済み）で設定する。この方式を前提にするのは `lib/fetcher.ts` のみとし、AUTH-3 実装時にトークン取得ロジックだけを差し替えられるようにする。
+`lib/supabase/server.ts` の `createClient()` が `next/headers` の cookie を介して Supabase セッションを読み書きする。`lib/fetcher.ts` は同ファイルの `getAccessToken()` でログイン中ユーザーの `access_token` を取得し、Bearer トークンとしてバックエンドへのリクエストに付与する。セッションが存在しない場合は `ApiError("config", ...)` を送出する。
+
+`BACKEND_API_BASE_URL` に加え、`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` を `frontend/.env.local`（gitignore 済み）に設定する。
+
+ログイン・ログアウトは `features/auth/actions.ts` の Server Action（`loginAction` / `logoutAction`）が `supabase.auth.signInWithPassword` / `supabase.auth.signOut` を呼び出す。
 
 ---
 

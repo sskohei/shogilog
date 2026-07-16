@@ -1,24 +1,42 @@
 "use server";
 
+import { redirect } from "next/navigation";
+
 import { validateLoginInput } from "@/features/auth/validation";
 import type { LoginFormState } from "@/features/auth/types";
+import { createClient } from "@/lib/supabase/server";
 
 export async function loginAction(
   _prevState: LoginFormState,
   formData: FormData
 ): Promise<LoginFormState> {
-  const errors = validateLoginInput({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
+  const email = formData.get("email");
+  const password = formData.get("password");
+
+  const errors = validateLoginInput({ email, password });
 
   if (Object.keys(errors).length > 0) {
     return { errors };
   }
 
-  // AUTH-3 (#12) が実際の Supabase sign-in をここに実装する。FE-3 では入力検証のみ行う。
-  return {
-    errors: {},
-    message: "ログイン機能は準備中です",
-  };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email as string,
+    password: password as string,
+  });
+
+  if (error) {
+    return {
+      errors: {},
+      message: "メールアドレスまたはパスワードが正しくありません",
+    };
+  }
+
+  redirect("/games");
+}
+
+export async function logoutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/auth/login");
 }

@@ -1,11 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const { getAccessTokenMock } = vi.hoisted(() => ({
+  getAccessTokenMock: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/server", () => ({
+  getAccessToken: getAccessTokenMock,
+}));
+
 import { ApiError, apiFetch } from "@/lib/fetcher";
 
 describe("apiFetch", () => {
   beforeEach(() => {
     vi.stubEnv("BACKEND_API_BASE_URL", "http://localhost:8000");
-    vi.stubEnv("DEV_AUTH_TOKEN", "test-token");
+    getAccessTokenMock.mockReset();
+    getAccessTokenMock.mockResolvedValue("test-token");
   });
 
   afterEach(() => {
@@ -21,8 +30,8 @@ describe("apiFetch", () => {
     } satisfies Partial<ApiError>);
   });
 
-  it("DEV_AUTH_TOKEN が未設定の場合は config エラーを投げる", async () => {
-    vi.stubEnv("DEV_AUTH_TOKEN", "");
+  it("ログインセッションが無い場合は config エラーを投げる", async () => {
+    getAccessTokenMock.mockResolvedValue(null);
 
     await expect(apiFetch("/games")).rejects.toMatchObject({
       kind: "config",
