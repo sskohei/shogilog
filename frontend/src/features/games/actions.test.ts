@@ -1,16 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { revalidatePathMock, updateGameMemoMock } = vi.hoisted(() => ({
+const {
+  revalidatePathMock,
+  redirectMock,
+  updateGameMemoMock,
+  createGameMock,
+} = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
+  redirectMock: vi.fn(),
   updateGameMemoMock: vi.fn(),
+  createGameMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("next/navigation", () => ({
+  redirect: redirectMock,
+}));
+
 vi.mock("@/services/api/games", () => ({
   updateGameMemo: updateGameMemoMock,
+  createGame: createGameMock,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -18,7 +30,16 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { ApiError } from "@/lib/fetcher";
-import { updateMemoAction } from "@/features/games/actions";
+import { createGameAction, updateMemoAction } from "@/features/games/actions";
+
+function makeValidFormData(): FormData {
+  const formData = new FormData();
+  formData.set("platform_id", "1");
+  formData.set("played_at", "2026-07-05T10:00");
+  formData.set("result", "win");
+  formData.set("side", "sente");
+  return formData;
+}
 
 describe("updateMemoAction", () => {
   beforeEach(() => {
@@ -51,5 +72,52 @@ describe("updateMemoAction", () => {
 
     expect(state.error).toBe("対局が見つかりません");
     expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("createGameAction", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    createGameMock.mockReset();
+  });
+
+  it("必須項目が不正な場合はフィールドエラーを返し、createGame を呼び出さない", async () => {
+    const formData = new FormData();
+    formData.set("platform_id", "");
+    formData.set("played_at", "");
+    formData.set("result", "");
+    formData.set("side", "");
+
+    const state = await createGameAction({ errors: {} }, formData);
+
+    expect(state.errors.platform_id).toBeDefined();
+    expect(createGameMock).not.toHaveBeenCalled();
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("登録成功時は作成した対局の詳細ページへリダイレクトする", async () => {
+    createGameMock.mockResolvedValue("game-1");
+
+    await createGameAction({ errors: {} }, makeValidFormData());
+
+    expect(createGameMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        platform_id: 1,
+        result: "win",
+        side: "sente",
+      })
+    );
+    expect(redirectMock).toHaveBeenCalledWith("/games/game-1");
+  });
+
+  it("API失敗時はエラーメッセージを返し、リダイレクトしない", async () => {
+    createGameMock.mockRejectedValue(
+      new ApiError("http", "対局の登録に失敗しました", 400)
+    );
+
+    const state = await createGameAction({ errors: {} }, makeValidFormData());
+
+    expect(state.message).toBe("対局の登録に失敗しました");
+    expect(redirectMock).not.toHaveBeenCalled();
   });
 });

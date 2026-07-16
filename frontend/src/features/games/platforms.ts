@@ -10,3 +10,11 @@ const PLATFORM_NAMES: Record<number, string> = {
 export function getPlatformName(platformId: number): string {
   return PLATFORM_NAMES[platformId] ?? `不明 (id: ${platformId})`;
 }
+
+export const PLATFORM_OPTIONS: { id: number; name: string }[] = Object.entries(
+  PLATFORM_NAMES
+).map(([id, name]) => ({ id: Number(id), name }));
+
+export function isKnownPlatformId(platformId: number): boolean {
+  return platformId in PLATFORM_NAMES;
+}
