@@ -2,7 +2,13 @@ from uuid import UUID
 
 from app.repositories.games import GameRepository
 from app.repositories.openings import OpeningRepository
-from app.schemas.dashboard import DashboardData, OpeningStat, PlatformStat
+from app.schemas.dashboard import (
+    DashboardData,
+    MonthlyStat,
+    OpeningStat,
+    PlatformStat,
+    SideStat,
+)
 from app.schemas.game import GameListFilters
 
 RECENT_GAMES_LIMIT = 5
@@ -51,6 +57,8 @@ class DashboardService:
             recent_games=recent_games,
             platform_stats=self._aggregate_platform_stats(rows),
             opening_stats=self._aggregate_opening_stats(rows),
+            side_stats=self._aggregate_side_stats(rows),
+            monthly_stats=self._aggregate_monthly_stats(rows),
         )
 
     def _aggregate_platform_stats(self, rows: list[dict]) -> list[PlatformStat]:
@@ -109,4 +117,34 @@ class DashboardService:
                 ),
             )
             for opening_id in ordered_ids
+        ]
+
+    def _aggregate_side_stats(self, rows: list[dict]) -> list[SideStat]:
+        grouped: dict[str, dict[str, int]] = {}
+
+        for row in rows:
+            counts = grouped.setdefault(row["side"], {"win": 0, "lose": 0})
+
+            if row["result"] in counts:
+                counts[row["result"]] += 1
+
+        return [
+            SideStat(
+                side=side,
+                win_rate=_win_rate(grouped[side]["win"], grouped[side]["lose"]),
+            )
+            for side in ("sente", "gote")
+            if side in grouped
+        ]
+
+    def _aggregate_monthly_stats(self, rows: list[dict]) -> list[MonthlyStat]:
+        counts: dict[str, int] = {}
+
+        for row in rows:
+            month = row["played_at"][:7]
+            counts[month] = counts.get(month, 0) + 1
+
+        return [
+            MonthlyStat(month=month, game_count=counts[month])
+            for month in sorted(counts)
         ]
