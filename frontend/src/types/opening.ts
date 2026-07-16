@@ -13,3 +13,7 @@ export type Opening = {
 export type OpeningListResponse = {
   data: Opening[];
 };
+
+export type FavoriteOpeningIdsResponse = {
+  data: number[];
+};

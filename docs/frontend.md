@@ -100,6 +100,7 @@ src/
 │   ├── profile/
 │   ├── tags/
 │   ├── ratings/
+│   ├── openings/
 │   └── dashboard/
 │
 ├── components/
@@ -227,6 +228,7 @@ Client Componentは以下の用途に限定します。
 - /dashboard
 - /profile
 - /tags
+- /openings
 
 Proxy はセッションが有効かどうかの楽観的チェック（cookieの読み取りのみ）に留め、実際のデータアクセス時には各処理内で再度セッションを検証します（`lib/fetcher.ts` の `getAccessToken()` 経由）。
 
@@ -296,6 +298,20 @@ export const fetchGames = async () => {
 
 ---
 
+## 9.7 プロフィール画面
+
+`/profile` は `services/api/profile.ts` の `fetchProfile()`(`GET /profile`)と `fetchPlatformRatings()`(`GET /profile/platform-ratings`)を `Promise.all` で並列取得する Server Component。
+
+`features/profile/ProfileForm.tsx` が表示名・自己紹介の編集フォーム(`updateProfileAction` → `PUT /profile`)を、`features/profile/PlatformRatingsSection.tsx` がプラットフォームごとの現在のレート/段級位編集行(`features/profile/PlatformRatingRow.tsx`)を描画する。各行は「未プレイ/プレイ済み」を `Select` で切り替え、プレイ済み選択時のみ `features/games/platforms.ts` の `getPlatformRatingMetric()`/`usesRankRating()` に応じてレート入力欄または段級位選択欄を出し分ける(`updatePlatformRatingAction` → `PUT /profile/platform-ratings/{platform_id}`)。未登録のプラットフォームはバックエンド側で `has_played: false` として補完されるため、フロントエンドは常に全プラットフォーム分の行を表示できる。
+
+---
+
+## 9.8 戦法画面
+
+`/openings` は `services/api/openings.ts` の `fetchOpenings()`(`GET /openings`)と `fetchFavoriteOpeningIds()`(`GET /openings/favorites`)を `Promise.all` で並列取得する Server Component。`features/openings/OpeningList.tsx` が戦法をカテゴリ(居飛車/振り飛車/その他)別にグルーピングして表示し、各行に `features/openings/FavoriteButton.tsx`(お気に入り登録 `POST /openings/{id}/favorite` / 解除 `DELETE /openings/{id}/favorite` を切り替えるトグルボタン)を添える。
+
+---
+
 # 10. UI設計方針
 
 ## 10.1 コンポーネント設計
@@ -345,6 +361,7 @@ Next.js App Routerを使用します。
 |/games/[id]|詳細|
 |/profile|プロフィール|
 |/tags|タグ管理|
+|/openings|戦法|
 |/dashboard|統計|
 |/auth/login|ログイン|
 
