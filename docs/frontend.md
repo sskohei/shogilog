@@ -224,6 +224,7 @@ Client Componentは以下の用途に限定します。
 - /games
 - /dashboard
 - /profile
+- /tags
 
 Proxy はセッションが有効かどうかの楽観的チェック（cookieの読み取りのみ）に留め、実際のデータアクセス時には各処理内で再度セッションを検証します（`lib/fetcher.ts` の `getAccessToken()` 経由）。
 
