@@ -19,7 +19,7 @@ from app.schemas.game import (
     GameUpdate,
     PlayerSide,
 )
-from app.schemas.tag import GameTagLinkRequest
+from app.schemas.tag import GameTagLinkRequest, TagListResponse
 from app.services.games import GameService
 from app.services.tags import TagService
 
@@ -129,6 +129,17 @@ async def delete_game(
     service.delete_game(current_user.id, game_id)
 
     return MessageResponse(message="Game deleted successfully.")
+
+
+@router.get("/{game_id}/tags", response_model=TagListResponse)
+async def list_game_tags(
+    game_id: UUID,
+    current_user: AuthUser = Depends(get_current_user),
+    service: TagService = Depends(get_tag_service),
+) -> TagListResponse:
+    tags = service.get_tags_for_game(current_user.id, game_id)
+
+    return TagListResponse(data=tags)
 
 
 @router.post("/{game_id}/tags", response_model=MessageResponse)

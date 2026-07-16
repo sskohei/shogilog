@@ -13,6 +13,9 @@ import {
   deleteGame,
   fetchGame,
   fetchGameKifuUrl,
+  fetchGameTags,
+  linkGameTag,
+  unlinkGameTag,
   updateGame,
   updateGameMemo,
 } from "@/services/api/games";
@@ -114,6 +117,43 @@ describe("deleteGame", () => {
     await deleteGame("game-1");
 
     expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1", {
+      method: "DELETE",
+    });
+  });
+});
+
+describe("fetchGameTags", () => {
+  it("対局に紐づくタグ一覧を返す", async () => {
+    apiFetchMock.mockResolvedValue({ data: [{ id: "tag-1", name: "研究" }] });
+
+    const tags = await fetchGameTags("game-1");
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1/tags");
+    expect(tags).toEqual([{ id: "tag-1", name: "研究" }]);
+  });
+});
+
+describe("linkGameTag", () => {
+  it("POST で対局にタグを追加する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    await linkGameTag("game-1", "tag-1");
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1/tags", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag_id: "tag-1" }),
+    });
+  });
+});
+
+describe("unlinkGameTag", () => {
+  it("DELETE で対局からタグを解除する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    await unlinkGameTag("game-1", "tag-1");
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1/tags/tag-1", {
       method: "DELETE",
     });
   });

@@ -454,7 +454,7 @@ GET /api/v1/games
 
 ### 概要
 
-対局詳細を取得します。レスポンス形式は 12.1 の一覧要素と同一です(タグは含まれません。対局に紐づくタグは 14. Game Tags API で管理します)。
+対局詳細を取得します。レスポンス形式は 12.1 の一覧要素と同一です(タグは含まれません。対局に紐づくタグは 14. Game Tags API(14.1 GET /games/{id}/tags)で取得します)。
 
 ---
 
@@ -618,7 +618,31 @@ GET /api/v1/games
 
 # 14. Game Tags API
 
-## 14.1 POST /games/{id}/tags
+## 14.1 GET /games/{id}/tags
+
+### 概要
+
+対局に紐づくタグ一覧を取得します。レスポンス形式は 13.1 と同一です。
+
+---
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "研究",
+      "color": "#ff0000"
+    }
+  ]
+}
+```
+
+---
+
+## 14.2 POST /games/{id}/tags
 
 ### 概要
 
@@ -636,7 +660,7 @@ GET /api/v1/games
 
 ---
 
-## 14.2 DELETE /games/{id}/tags/{tag_id}
+## 14.3 DELETE /games/{id}/tags/{tag_id}
 
 ### 概要
 

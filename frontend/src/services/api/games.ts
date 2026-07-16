@@ -8,6 +8,7 @@ import type {
   GameListQueryParams,
   GameListResponse,
 } from "@/types/game";
+import type { Tag, TagListResponse } from "@/types/tag";
 
 export async function fetchGames(
   params: GameListQueryParams
@@ -71,4 +72,21 @@ export async function updateGame(
 
 export async function deleteGame(id: string): Promise<void> {
   await apiFetch(`/games/${id}`, { method: "DELETE" });
+}
+
+export async function fetchGameTags(gameId: string): Promise<Tag[]> {
+  const response = await apiFetch<TagListResponse>(`/games/${gameId}/tags`);
+  return response.data;
+}
+
+export async function linkGameTag(gameId: string, tagId: string): Promise<void> {
+  await apiFetch(`/games/${gameId}/tags`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tag_id: tagId }),
+  });
+}
+
+export async function unlinkGameTag(gameId: string, tagId: string): Promise<void> {
+  await apiFetch(`/games/${gameId}/tags/${tagId}`, { method: "DELETE" });
 }

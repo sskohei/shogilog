@@ -7,6 +7,8 @@ import { ApiError } from "@/lib/fetcher";
 import {
   createGame,
   deleteGame,
+  linkGameTag,
+  unlinkGameTag,
   updateGame,
   updateGameMemo,
 } from "@/services/api/games";
@@ -152,4 +154,47 @@ export async function deleteGameAction(
   }
 
   redirect("/games");
+}
+
+export async function linkGameTagAction(
+  gameId: string,
+  _prevState: SimpleActionState,
+  formData: FormData
+): Promise<SimpleActionState> {
+  const tagId = formData.get("tag_id");
+
+  if (typeof tagId !== "string" || !tagId) {
+    return { error: "タグを選択してください。" };
+  }
+
+  try {
+    await linkGameTag(gameId, tagId);
+  } catch (error) {
+    return {
+      error:
+        error instanceof ApiError ? error.message : "タグの追加に失敗しました。",
+    };
+  }
+
+  revalidatePath(`/games/${gameId}`);
+  return {};
+}
+
+export async function unlinkGameTagAction(
+  gameId: string,
+  tagId: string,
+  _prevState: SimpleActionState,
+  _formData: FormData
+): Promise<SimpleActionState> {
+  try {
+    await unlinkGameTag(gameId, tagId);
+  } catch (error) {
+    return {
+      error:
+        error instanceof ApiError ? error.message : "タグの解除に失敗しました。",
+    };
+  }
+
+  revalidatePath(`/games/${gameId}`);
+  return {};
 }
