@@ -10,8 +10,10 @@ vi.mock("@/lib/fetcher", () => ({
 
 import {
   createGame,
+  deleteGame,
   fetchGame,
   fetchGameKifuUrl,
+  updateGame,
   updateGameMemo,
 } from "@/services/api/games";
 import type { GameCreatePayload } from "@/types/game";
@@ -80,5 +82,39 @@ describe("createGame", () => {
       body: JSON.stringify(payload),
     });
     expect(id).toBe("game-1");
+  });
+});
+
+describe("updateGame", () => {
+  it("PUT で対局を更新する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    const payload: GameCreatePayload = {
+      platform_id: 1,
+      played_at: "2026-07-05T10:00:00.000Z",
+      result: "win",
+      side: "sente",
+      memo: null,
+    };
+
+    await updateGame("game-1", payload);
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  });
+});
+
+describe("deleteGame", () => {
+  it("DELETE で対局を削除する", async () => {
+    apiFetchMock.mockResolvedValue(undefined);
+
+    await deleteGame("game-1");
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games/game-1", {
+      method: "DELETE",
+    });
   });
 });

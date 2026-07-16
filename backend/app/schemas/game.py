@@ -29,6 +29,9 @@ class GameBase(BaseModel):
     rating_after: int | None = None
     opponent_name: str | None = Field(default=None, max_length=255)
     opponent_rating: int | None = None
+    rank_before: str | None = Field(default=None, max_length=32)
+    rank_after: str | None = Field(default=None, max_length=32)
+    opponent_rank: str | None = Field(default=None, max_length=32)
     memo: str | None = None
     kifu_path: str | None = Field(default=None, max_length=1024)
 
@@ -48,6 +51,9 @@ class GameUpdate(BaseModel):
     rating_after: int | None = None
     opponent_name: str | None = Field(default=None, max_length=255)
     opponent_rating: int | None = None
+    rank_before: str | None = Field(default=None, max_length=32)
+    rank_after: str | None = Field(default=None, max_length=32)
+    opponent_rank: str | None = Field(default=None, max_length=32)
     memo: str | None = None
     kifu_path: str | None = Field(default=None, max_length=1024)
 

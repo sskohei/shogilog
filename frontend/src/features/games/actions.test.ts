@@ -5,11 +5,15 @@ const {
   redirectMock,
   updateGameMemoMock,
   createGameMock,
+  updateGameMock,
+  deleteGameMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   redirectMock: vi.fn(),
   updateGameMemoMock: vi.fn(),
   createGameMock: vi.fn(),
+  updateGameMock: vi.fn(),
+  deleteGameMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -23,6 +27,8 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/services/api/games", () => ({
   updateGameMemo: updateGameMemoMock,
   createGame: createGameMock,
+  updateGame: updateGameMock,
+  deleteGame: deleteGameMock,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -30,7 +36,12 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { ApiError } from "@/lib/fetcher";
-import { createGameAction, updateMemoAction } from "@/features/games/actions";
+import {
+  createGameAction,
+  deleteGameAction,
+  updateGameAction,
+  updateMemoAction,
+} from "@/features/games/actions";
 
 function makeValidFormData(): FormData {
   const formData = new FormData();
@@ -118,6 +129,83 @@ describe("createGameAction", () => {
     const state = await createGameAction({ errors: {} }, makeValidFormData());
 
     expect(state.message).toBe("対局の登録に失敗しました");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateGameAction", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    revalidatePathMock.mockClear();
+    updateGameMock.mockReset();
+  });
+
+  it("必須項目が不正な場合はフィールドエラーを返し、updateGame を呼び出さない", async () => {
+    const formData = new FormData();
+    formData.set("platform_id", "");
+    formData.set("played_at", "");
+    formData.set("result", "");
+    formData.set("side", "");
+
+    const state = await updateGameAction("game-1", { errors: {} }, formData);
+
+    expect(state.errors.platform_id).toBeDefined();
+    expect(updateGameMock).not.toHaveBeenCalled();
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("更新成功時は該当ページを再検証し、詳細ページへリダイレクトする", async () => {
+    updateGameMock.mockResolvedValue(undefined);
+
+    await updateGameAction("game-1", { errors: {} }, makeValidFormData());
+
+    expect(updateGameMock).toHaveBeenCalledWith(
+      "game-1",
+      expect.objectContaining({ platform_id: 1, result: "win", side: "sente" })
+    );
+    expect(revalidatePathMock).toHaveBeenCalledWith("/games/game-1");
+    expect(redirectMock).toHaveBeenCalledWith("/games/game-1");
+  });
+
+  it("API失敗時はエラーメッセージを返し、リダイレクトしない", async () => {
+    updateGameMock.mockRejectedValue(
+      new ApiError("http", "対局の更新に失敗しました", 400)
+    );
+
+    const state = await updateGameAction(
+      "game-1",
+      { errors: {} },
+      makeValidFormData()
+    );
+
+    expect(state.message).toBe("対局の更新に失敗しました");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteGameAction", () => {
+  beforeEach(() => {
+    redirectMock.mockClear();
+    deleteGameMock.mockReset();
+  });
+
+  it("削除成功時は一覧ページへリダイレクトする", async () => {
+    deleteGameMock.mockResolvedValue(undefined);
+
+    await deleteGameAction("game-1", {}, new FormData());
+
+    expect(deleteGameMock).toHaveBeenCalledWith("game-1");
+    expect(redirectMock).toHaveBeenCalledWith("/games");
+  });
+
+  it("削除失敗時はエラーメッセージを返し、リダイレクトしない", async () => {
+    deleteGameMock.mockRejectedValue(
+      new ApiError("http", "対局の削除に失敗しました", 404)
+    );
+
+    const state = await deleteGameAction("game-1", {}, new FormData());
+
+    expect(state.error).toBe("対局の削除に失敗しました");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });

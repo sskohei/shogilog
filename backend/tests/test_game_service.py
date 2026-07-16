@@ -31,6 +31,9 @@ class FakeGameRepository:
             "rating_after": 1210,
             "opponent_name": "player123",
             "opponent_rating": 1190,
+            "rank_before": None,
+            "rank_after": None,
+            "opponent_rank": None,
             "memo": "test",
             "kifu_path": None,
             "created_at": "2026-07-05T10:10:00+00:00",
@@ -102,6 +105,42 @@ def test_create_game_adds_user_scoped_payload():
     assert game["user_id"] == str(repository.user_id)
     assert game["platform_id"] == 1
     assert game["result"] == "win"
+
+
+def test_create_game_passes_through_rank_fields():
+    repository = FakeGameRepository()
+    service = GameService(repository=repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+        rating_before=65,
+        rating_after=80,
+        rank_before="二段",
+        rank_after="三段",
+        opponent_rank="初段",
+    )
+
+    game = service.create_game(repository.user_id, payload)
+
+    assert game["rank_before"] == "二段"
+    assert game["rank_after"] == "三段"
+    assert game["opponent_rank"] == "初段"
+
+
+def test_update_game_passes_through_rank_fields():
+    repository = FakeGameRepository()
+    service = GameService(repository=repository)
+
+    game = service.update_game(
+        repository.user_id,
+        repository.game_id,
+        GameUpdate(rank_before="五級", opponent_rank="三級"),
+    )
+
+    assert game["rank_before"] == "五級"
+    assert game["opponent_rank"] == "三級"
 
 
 def test_update_game_rejects_empty_payload():

@@ -1,9 +1,16 @@
-import { isKnownPlatformId } from "@/features/games/platforms";
+import {
+  getPlatformRatingMetric,
+  getRankOptions,
+  isKnownPlatformId,
+  usesRankRating,
+} from "@/features/games/platforms";
 import type { GameResult, PlayerSide } from "@/types/game";
 
 const OPPONENT_NAME_MAX_LENGTH = 255;
 const RESULTS: GameResult[] = ["win", "lose", "draw"];
 const SIDES: PlayerSide[] = ["sente", "gote"];
+const PERCENTAGE_MIN = 0;
+const PERCENTAGE_MAX = 100;
 
 export type GameFormFieldErrors = {
   platform_id?: string[];
@@ -16,6 +23,9 @@ export type GameFormFieldErrors = {
   rating_after?: string[];
   opponent_name?: string[];
   opponent_rating?: string[];
+  rank_before?: string[];
+  rank_after?: string[];
+  opponent_rank?: string[];
 };
 
 export type GameFormInput = {
@@ -29,6 +39,9 @@ export type GameFormInput = {
   rating_after: FormDataEntryValue | null;
   opponent_name: FormDataEntryValue | null;
   opponent_rating: FormDataEntryValue | null;
+  rank_before: FormDataEntryValue | null;
+  rank_after: FormDataEntryValue | null;
+  opponent_rank: FormDataEntryValue | null;
 };
 
 export function toOptionalInt(value: FormDataEntryValue | null): number | null {
@@ -43,17 +56,34 @@ export function toOptionalString(value: FormDataEntryValue | null): string | nul
   return raw ? raw : null;
 }
 
-function isValidOptionalInt(value: FormDataEntryValue | null): boolean {
-  const raw = typeof value === "string" ? value.trim() : "";
-  if (!raw) return true;
-  return Number.isInteger(Number(raw));
-}
-
 function isValidOptionalPositiveInt(value: FormDataEntryValue | null): boolean {
   const raw = typeof value === "string" ? value.trim() : "";
   if (!raw) return true;
   const parsed = Number(raw);
   return Number.isInteger(parsed) && parsed >= 1;
+}
+
+function isValidRatingValue(
+  value: FormDataEntryValue | null,
+  metric: "rating" | "percentage" | "point"
+): boolean {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return true;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed)) return false;
+  if (metric === "percentage") {
+    return parsed >= PERCENTAGE_MIN && parsed <= PERCENTAGE_MAX;
+  }
+  return true;
+}
+
+function isValidRank(
+  value: FormDataEntryValue | null,
+  platformId: number
+): boolean {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return true;
+  return getRankOptions(platformId).includes(raw);
 }
 
 export function validateGameInput(input: GameFormInput): GameFormFieldErrors {
@@ -62,7 +92,8 @@ export function validateGameInput(input: GameFormInput): GameFormFieldErrors {
   const platformId = Number(
     typeof input.platform_id === "string" ? input.platform_id : ""
   );
-  if (!Number.isInteger(platformId) || !isKnownPlatformId(platformId)) {
+  const isValidPlatform = Number.isInteger(platformId) && isKnownPlatformId(platformId);
+  if (!isValidPlatform) {
     errors.platform_id = ["対局サービスを選択してください"];
   }
 
@@ -87,21 +118,51 @@ export function validateGameInput(input: GameFormInput): GameFormFieldErrors {
     errors.opponent_opening_id = ["戦法の指定が正しくありません"];
   }
 
-  if (!isValidOptionalInt(input.rating_before)) {
-    errors.rating_before = ["レーティングは整数で入力してください"];
-  }
-
-  if (!isValidOptionalInt(input.rating_after)) {
-    errors.rating_after = ["レーティングは整数で入力してください"];
-  }
-
   const opponentName = toOptionalString(input.opponent_name) ?? "";
   if (opponentName.length > OPPONENT_NAME_MAX_LENGTH) {
     errors.opponent_name = ["対戦相手名が長すぎます"];
   }
 
-  if (!isValidOptionalInt(input.opponent_rating)) {
-    errors.opponent_rating = ["レーティングは整数で入力してください"];
+  if (!isValidPlatform) {
+    // プラットフォーム未選択時はレーティング/段位の意味が決まらないため、整数チェックのみに留める。
+    if (!isValidRatingValue(input.rating_before, "rating")) {
+      errors.rating_before = ["数値を入力してください"];
+    }
+    if (!isValidRatingValue(input.rating_after, "rating")) {
+      errors.rating_after = ["数値を入力してください"];
+    }
+    if (!isValidRatingValue(input.opponent_rating, "rating")) {
+      errors.opponent_rating = ["数値を入力してください"];
+    }
+    return errors;
+  }
+
+  const metric = getPlatformRatingMetric(platformId);
+  const ratingErrorMessage =
+    metric === "percentage"
+      ? [`0〜${PERCENTAGE_MAX}の整数で入力してください`]
+      : ["数値を入力してください"];
+
+  if (!isValidRatingValue(input.rating_before, metric)) {
+    errors.rating_before = ratingErrorMessage;
+  }
+  if (!isValidRatingValue(input.rating_after, metric)) {
+    errors.rating_after = ratingErrorMessage;
+  }
+  if (!isValidRatingValue(input.opponent_rating, metric)) {
+    errors.opponent_rating = ratingErrorMessage;
+  }
+
+  if (usesRankRating(platformId)) {
+    if (!isValidRank(input.rank_before, platformId)) {
+      errors.rank_before = ["段位の指定が正しくありません"];
+    }
+    if (!isValidRank(input.rank_after, platformId)) {
+      errors.rank_after = ["段位の指定が正しくありません"];
+    }
+    if (!isValidRank(input.opponent_rank, platformId)) {
+      errors.opponent_rank = ["段位の指定が正しくありません"];
+    }
   }
 
   return errors;

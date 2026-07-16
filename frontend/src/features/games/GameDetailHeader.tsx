@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 
 import { ResultBadge, SideBadge } from "@/features/games/Badges";
-import { formatPlayedAt } from "@/features/games/format";
+import {
+  formatOpponentRating,
+  formatPlayedAt,
+  formatRatingTransition,
+} from "@/features/games/format";
 import { getPlatformName } from "@/features/games/platforms";
 import type { Game } from "@/types/game";
 
@@ -39,15 +43,13 @@ export function GameDetailHeader({
         <Field label="対局場">{getPlatformName(game.platform_id)}</Field>
         <Field label="対戦相手">
           {game.opponent_name ?? "—"}
-          {game.opponent_rating !== null && (
-            <span className="text-muted-foreground"> ({game.opponent_rating})</span>
+          {formatOpponentRating(game) !== null && (
+            <span className="text-muted-foreground"> ({formatOpponentRating(game)})</span>
           )}
         </Field>
         <Field label="自分の戦法">{myOpeningName}</Field>
         <Field label="相手の戦法">{opponentOpeningName}</Field>
-        <Field label="レーティング">
-          {game.rating_before ?? "—"} → {game.rating_after ?? "—"}
-        </Field>
+        <Field label="レーティング">{formatRatingTransition(game)}</Field>
       </dl>
     </section>
   );

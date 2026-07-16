@@ -19,6 +19,9 @@ function makeValidInput(overrides: Partial<GameFormInput> = {}): GameFormInput {
     rating_after: null,
     opponent_name: null,
     opponent_rating: null,
+    rank_before: null,
+    rank_after: null,
+    opponent_rank: null,
     ...overrides,
   };
 }
@@ -86,6 +89,54 @@ describe("validateGameInput", () => {
     );
 
     expect(errors).toEqual({});
+  });
+
+  it("段位制プラットフォーム(将棋ウォーズ)では%が100を超えるとエラーになる", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "1", rating_before: "101" })
+    );
+
+    expect(errors.rating_before).toBeDefined();
+  });
+
+  it("段位制プラットフォーム(将棋ウォーズ)では%が0〜100ならエラーにならない", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "1", rating_before: "65", rating_after: "80" })
+    );
+
+    expect(errors).toEqual({});
+  });
+
+  it("数値レーティング制プラットフォーム(将棋クエスト)では100超でもエラーにならない", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "2", rating_before: "1500" })
+    );
+
+    expect(errors).toEqual({});
+  });
+
+  it("段位制プラットフォームで無効な段位を指定するとエラーになる", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "1", rank_before: "十段" })
+    );
+
+    expect(errors.rank_before).toBeDefined();
+  });
+
+  it("段位制プラットフォームで有効な段位を指定するとエラーにならない", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "1", rank_before: "三段", opponent_rank: "15級" })
+    );
+
+    expect(errors).toEqual({});
+  });
+
+  it("数値レーティング制プラットフォームでは段位が未使用でもエラーにならない(段位を入れても検証しない)", () => {
+    const errors = validateGameInput(
+      makeValidInput({ platform_id: "2", rank_before: "何でも" })
+    );
+
+    expect(errors.rank_before).toBeUndefined();
   });
 });
 
