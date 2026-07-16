@@ -43,6 +43,26 @@ export type GameKifuUrlResponse = {
   };
 };
 
+export type GameIdResponse = {
+  data: {
+    id: string;
+  };
+};
+
+export type GameCreatePayload = {
+  platform_id: number;
+  played_at: string;
+  result: GameResult;
+  side: PlayerSide;
+  my_opening_id?: number | null;
+  opponent_opening_id?: number | null;
+  rating_before?: number | null;
+  rating_after?: number | null;
+  opponent_name?: string | null;
+  opponent_rating?: number | null;
+  memo?: string | null;
+};
+
 // backend/app/schemas/game.py の GameListFilters をミラー。
 // 今回のスコープでは page/limit のみ使用し、その他はフィルタ UI 追加時（FE-5 相当）に利用する。
 export type GameListQueryParams = {

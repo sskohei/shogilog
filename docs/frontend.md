@@ -277,6 +277,14 @@ export const fetchGames = async () => {
 
 ---
 
+## 9.5 対局登録フォーム
+
+`/games/new` は `features/games/GameForm.tsx`(Client Component)を描画する Server Component。`features/games/validation.ts` の `validateGameInput()` でフィールドバリデーションを行い、`features/games/actions.ts` の Server Action(`createGameAction`)が `createGame()`(`POST /games`)を呼び出す。成功時はレスポンスの `id` を使って作成した対局の詳細ページ(`/games/{id}`)へ `redirect` する。
+
+対局サービス(platform)の選択肢は `features/games/platforms.ts` の静的マップをそのまま利用する(Platforms API 未実装のため)。棋譜ファイルのアップロードは対応しておらず、`kifu_path` は未設定のまま登録する(署名付きアップロードURLの発行は将来対応)。
+
+---
+
 # 10. UI設計方針
 
 ## 10.1 コンポーネント設計
@@ -322,6 +330,7 @@ Next.js App Routerを使用します。
 |---|---|
 |/|ホーム|
 |/games|対局一覧|
+|/games/new|対局登録|
 |/games/[id]|詳細|
 |/profile|プロフィール|
 |/tags|タグ管理|

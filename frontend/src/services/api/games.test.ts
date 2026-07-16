@@ -9,10 +9,12 @@ vi.mock("@/lib/fetcher", () => ({
 }));
 
 import {
+  createGame,
   fetchGame,
   fetchGameKifuUrl,
   updateGameMemo,
 } from "@/services/api/games";
+import type { GameCreatePayload } from "@/types/game";
 
 describe("fetchGame", () => {
   it("data を unwrap して返す", async () => {
@@ -55,5 +57,28 @@ describe("updateGameMemo", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ memo: "更新後のメモ" }),
     });
+  });
+});
+
+describe("createGame", () => {
+  it("POST で対局を作成し、作成された id を返す", async () => {
+    apiFetchMock.mockResolvedValue({ data: { id: "game-1" } });
+
+    const payload: GameCreatePayload = {
+      platform_id: 1,
+      played_at: "2026-07-05T10:00:00.000Z",
+      result: "win",
+      side: "sente",
+      memo: null,
+    };
+
+    const id = await createGame(payload);
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/games", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(id).toBe("game-1");
   });
 });
