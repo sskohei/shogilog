@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // docs/frontend.md §8.3 に明記された保護ルート。
-const PROTECTED_ROUTES = ["/games", "/dashboard", "/profile"];
+const PROTECTED_ROUTES = ["/games", "/dashboard", "/profile", "/tags"];
 const LOGIN_ROUTE = "/auth/login";
 
 export async function updateSession(request: NextRequest) {
