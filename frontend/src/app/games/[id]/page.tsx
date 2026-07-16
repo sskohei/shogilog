@@ -4,15 +4,18 @@ import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/fetcher";
-import { fetchGame, fetchGameKifuUrl } from "@/services/api/games";
+import { fetchGame, fetchGameKifuUrl, fetchGameTags } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
+import { fetchTags } from "@/services/api/tags";
 import { DeleteGameButton } from "@/features/games/DeleteGameButton";
 import { ErrorState } from "@/features/games/ErrorState";
 import { getGamesErrorMessage } from "@/features/games/errors";
 import { GameDetailHeader } from "@/features/games/GameDetailHeader";
+import { GameTagsSection } from "@/features/games/GameTagsSection";
 import { KifuSection } from "@/features/games/KifuSection";
 import { MemoSection } from "@/features/games/MemoSection";
 import type { Game } from "@/types/game";
+import type { Tag } from "@/types/tag";
 
 export const metadata: Metadata = {
   title: "対局詳細 | ShogiLog",
@@ -24,18 +27,22 @@ type GameDetailPageData =
       game: Game;
       kifuUrl: string | null;
       openingsById: Map<number, string>;
+      gameTags: Tag[];
+      allTags: Tag[];
     }
   | { ok: false; message: string };
 
 async function loadGameDetailPageData(id: string): Promise<GameDetailPageData> {
   try {
-    const [game, kifuUrl, openings] = await Promise.all([
+    const [game, kifuUrl, openings, gameTags, allTags] = await Promise.all([
       fetchGame(id),
       fetchGameKifuUrl(id),
       fetchOpenings(),
+      fetchGameTags(id),
+      fetchTags(),
     ]);
     const openingsById = new Map(openings.map((opening) => [opening.id, opening.name]));
-    return { ok: true, game, kifuUrl, openingsById };
+    return { ok: true, game, kifuUrl, openingsById, gameTags, allTags };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();
@@ -75,6 +82,11 @@ export default async function GameDetailPage({
       ) : (
         <>
           <GameDetailHeader game={data.game} openingsById={data.openingsById} />
+          <GameTagsSection
+            gameId={data.game.id}
+            gameTags={data.gameTags}
+            allTags={data.allTags}
+          />
           <KifuSection kifuUrl={data.kifuUrl} />
           <MemoSection gameId={data.game.id} memo={data.game.memo} />
         </>

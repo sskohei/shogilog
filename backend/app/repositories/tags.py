@@ -32,7 +32,9 @@ class TagRepository(SupabaseRepository):
             .execute()
         )
 
-        return response.data
+        # maybe_single().execute() は該当行が無い場合、data=None のレスポンスではなく
+        # None そのものを返す(postgrest-py の仕様)。
+        return response.data if response is not None else None
 
     def get_by_name(self, user_id: UUID, name: str) -> dict | None:
         response = (
@@ -44,7 +46,7 @@ class TagRepository(SupabaseRepository):
             .execute()
         )
 
-        return response.data
+        return response.data if response is not None else None
 
     def create(self, user_id: UUID, data: dict) -> dict:
         response = (
@@ -90,7 +92,7 @@ class TagRepository(SupabaseRepository):
             .execute()
         )
 
-        return response.data is not None
+        return response is not None
 
     def tag_exists_for_user(self, user_id: UUID, tag_id: UUID) -> bool:
         return self.get_by_id(user_id, tag_id) is not None
@@ -105,7 +107,7 @@ class TagRepository(SupabaseRepository):
             .execute()
         )
 
-        return response.data is not None
+        return response is not None
 
     def create_game_tag(self, game_id: UUID, tag_id: UUID) -> None:
         (
@@ -129,3 +131,13 @@ class TagRepository(SupabaseRepository):
         )
 
         return bool(response.data)
+
+    def list_for_game(self, game_id: UUID) -> list[dict]:
+        response = (
+            self.table("game_tags")
+            .select("tags(*)")
+            .eq("game_id", str(game_id))
+            .execute()
+        )
+
+        return [row["tags"] for row in response.data or [] if row.get("tags")]

@@ -116,3 +116,12 @@ class TagService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Tag is not linked to this game.",
             )
+
+    def get_tags_for_game(self, user_id: UUID, game_id: UUID) -> list[dict]:
+        if not self.repository.game_exists_for_user(user_id, game_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Game not found.",
+            )
+
+        return self.repository.list_for_game(game_id)

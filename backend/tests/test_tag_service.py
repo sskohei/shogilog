@@ -25,6 +25,7 @@ class FakeTagRepository:
         }
         self.user_games = {self.game_id}
         self.game_tags = set[tuple[UUID, UUID]]()
+        self.other_game_id = uuid4()
 
     def list_by_user(self, user_id: UUID) -> list[dict]:
         return [
@@ -99,6 +100,13 @@ class FakeTagRepository:
         self.game_tags.remove(key)
         return True
 
+    def list_for_game(self, game_id: UUID) -> list[dict]:
+        return [
+            self.tags[tag_id]
+            for (linked_game_id, tag_id) in self.game_tags
+            if linked_game_id == game_id
+        ]
+
 
 def test_create_tag_rejects_duplicate_name():
     repository = FakeTagRepository()
@@ -171,5 +179,25 @@ def test_unlink_tag_from_game_raises_404_for_missing_link():
 
     with pytest.raises(HTTPException) as exc:
         service.unlink_tag_from_game(repository.user_id, repository.game_id, repository.tag_id)
+
+    assert exc.value.status_code == 404
+
+
+def test_get_tags_for_game_returns_linked_tags():
+    repository = FakeTagRepository()
+    service = TagService(repository=repository)
+    service.link_tag_to_game(repository.user_id, repository.game_id, repository.tag_id)
+
+    tags = service.get_tags_for_game(repository.user_id, repository.game_id)
+
+    assert [tag["id"] for tag in tags] == [str(repository.tag_id)]
+
+
+def test_get_tags_for_game_raises_404_for_game_not_owned():
+    repository = FakeTagRepository()
+    service = TagService(repository=repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.get_tags_for_game(repository.user_id, repository.other_game_id)
 
     assert exc.value.status_code == 404
