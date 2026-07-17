@@ -3,7 +3,7 @@ import type { Game } from "@/types/game";
 
 const HEADERS = [
   "対局日時",
-  "対局場",
+  "対局サービス",
   "結果",
   "手番",
   "対戦相手",
