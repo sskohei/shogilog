@@ -2,16 +2,19 @@ from uuid import UUID
 
 from app.repositories.games import GameRepository
 from app.repositories.openings import OpeningRepository
+from app.repositories.ratings import RatingRepository
 from app.schemas.dashboard import (
     DashboardData,
     MonthlyStat,
     OpeningStat,
     PlatformStat,
+    RatingHistoryPoint,
     SideStat,
 )
 from app.schemas.game import GameListFilters
 
 RECENT_GAMES_LIMIT = 5
+RATING_HISTORY_LIMIT_PER_PLATFORM = 100
 
 
 def _win_rate(wins: int, losses: int) -> float:
@@ -32,9 +35,11 @@ class DashboardService:
         self,
         game_repository: GameRepository | None = None,
         opening_repository: OpeningRepository | None = None,
+        rating_repository: RatingRepository | None = None,
     ) -> None:
         self.game_repository = game_repository or GameRepository()
         self.opening_repository = opening_repository or OpeningRepository()
+        self.rating_repository = rating_repository or RatingRepository()
 
     def get_dashboard(self, user_id: UUID) -> DashboardData:
         rows = self.game_repository.list_stats_by_user(user_id)
@@ -59,6 +64,9 @@ class DashboardService:
             opening_stats=self._aggregate_opening_stats(rows),
             side_stats=self._aggregate_side_stats(rows),
             monthly_stats=self._aggregate_monthly_stats(rows),
+            rating_history=self._aggregate_rating_history(
+                self.rating_repository.list_by_user(user_id)
+            ),
         )
 
     def _aggregate_platform_stats(self, rows: list[dict]) -> list[PlatformStat]:
@@ -147,4 +155,27 @@ class DashboardService:
         return [
             MonthlyStat(month=month, game_count=counts[month])
             for month in sorted(counts)
+        ]
+
+    def _aggregate_rating_history(self, rows: list[dict]) -> list[RatingHistoryPoint]:
+        by_platform: dict[int, list[dict]] = {}
+
+        for row in rows:
+            by_platform.setdefault(row["platform_id"], []).append(row)
+
+        limited_rows = [
+            row
+            for platform_rows in by_platform.values()
+            for row in platform_rows[-RATING_HISTORY_LIMIT_PER_PLATFORM:]
+        ]
+        limited_rows.sort(key=lambda row: row["recorded_at"])
+
+        return [
+            RatingHistoryPoint(
+                platform_id=row["platform_id"],
+                rating=row["rating"],
+                rank=row.get("rank"),
+                recorded_at=row["recorded_at"],
+            )
+            for row in limited_rows
         ]

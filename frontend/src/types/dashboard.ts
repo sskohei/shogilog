@@ -20,6 +20,13 @@ export type MonthlyStat = {
   game_count: number;
 };
 
+export type RatingHistoryPoint = {
+  platform_id: number;
+  rating: number;
+  rank: string | null;
+  recorded_at: string;
+};
+
 export type DashboardData = {
   total_games: number;
   win_rate: number;
@@ -28,6 +35,7 @@ export type DashboardData = {
   opening_stats: OpeningStat[];
   side_stats: SideStat[];
   monthly_stats: MonthlyStat[];
+  rating_history: RatingHistoryPoint[];
 };
 
 export type DashboardResponse = {

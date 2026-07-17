@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -25,6 +26,13 @@ class MonthlyStat(BaseModel):
     game_count: int = Field(..., ge=0)
 
 
+class RatingHistoryPoint(BaseModel):
+    platform_id: int
+    rating: int
+    rank: str | None = None
+    recorded_at: datetime
+
+
 class DashboardData(BaseModel):
     total_games: int = Field(..., ge=0)
     win_rate: float = Field(..., ge=0, le=1)
@@ -33,6 +41,7 @@ class DashboardData(BaseModel):
     opening_stats: list[OpeningStat]
     side_stats: list[SideStat]
     monthly_stats: list[MonthlyStat]
+    rating_history: list[RatingHistoryPoint]
 
 
 class DashboardResponse(BaseModel):

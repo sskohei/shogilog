@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 from app.schemas.game import GameListFilters
@@ -73,10 +74,42 @@ class FakeOpeningRepository:
         ]
 
 
-def make_service(game_repository: FakeGameRepository) -> DashboardService:
+class FakeRatingRepository:
+    def __init__(self, user_id: UUID) -> None:
+        self.user_id = user_id
+        self.rows: list[dict] = [
+            {
+                "platform_id": 1,
+                "rating": 1200,
+                "rank": None,
+                "recorded_at": "2026-06-10T10:00:00+00:00",
+            },
+            {
+                "platform_id": 1,
+                "rating": 1215,
+                "rank": "初段",
+                "recorded_at": "2026-07-05T10:00:00+00:00",
+            },
+            {
+                "platform_id": 2,
+                "rating": 1500,
+                "rank": None,
+                "recorded_at": "2026-07-06T10:00:00+00:00",
+            },
+        ]
+
+    def list_by_user(self, user_id: UUID) -> list[dict]:
+        return self.rows if user_id == self.user_id else []
+
+
+def make_service(
+    game_repository: FakeGameRepository,
+    rating_repository: FakeRatingRepository | None = None,
+) -> DashboardService:
     return DashboardService(
         game_repository=game_repository,
         opening_repository=FakeOpeningRepository(),
+        rating_repository=rating_repository or FakeRatingRepository(game_repository.user_id),
     )
 
 
@@ -155,7 +188,9 @@ def test_get_dashboard_handles_no_games():
     game_repository = FakeGameRepository()
     game_repository.rows = []
     game_repository.recent = []
-    service = make_service(game_repository)
+    rating_repository = FakeRatingRepository(game_repository.user_id)
+    rating_repository.rows = []
+    service = make_service(game_repository, rating_repository)
 
     data = service.get_dashboard(game_repository.user_id)
 
@@ -166,3 +201,43 @@ def test_get_dashboard_handles_no_games():
     assert data.side_stats == []
     assert data.monthly_stats == []
     assert data.recent_games == []
+    assert data.rating_history == []
+
+
+def test_get_dashboard_includes_rating_history():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    assert len(data.rating_history) == 3
+    assert [point.platform_id for point in data.rating_history] == [1, 1, 2]
+    assert [point.rating for point in data.rating_history] == [1200, 1215, 1500]
+    assert [point.rank for point in data.rating_history] == [None, "初段", None]
+
+
+def test_get_dashboard_limits_rating_history_to_last_100_per_platform():
+    game_repository = FakeGameRepository()
+    rating_repository = FakeRatingRepository(game_repository.user_id)
+    base_time = datetime(2026, 1, 1, tzinfo=UTC)
+    rating_repository.rows = [
+        {
+            "platform_id": 1,
+            "rating": 1000 + i,
+            "rank": None,
+            "recorded_at": (base_time + timedelta(minutes=i)).isoformat(),
+        }
+        for i in range(150)
+    ] + [
+        {"platform_id": 2, "rating": 1500, "rank": None, "recorded_at": "2026-07-06T10:00:00+00:00"},
+    ]
+    service = make_service(game_repository, rating_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    platform_1_points = [p for p in data.rating_history if p.platform_id == 1]
+    platform_2_points = [p for p in data.rating_history if p.platform_id == 2]
+
+    assert len(platform_1_points) == 100
+    assert [p.rating for p in platform_1_points] == [1000 + i for i in range(50, 150)]
+    assert len(platform_2_points) == 1
