@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { ApiError } from "@/lib/fetcher";
 import { fetchDashboard } from "@/services/api/dashboard";
 import { fetchOpenings } from "@/services/api/openings";
-import { getDashboardErrorMessage } from "@/features/dashboard/errors";
-import { ErrorState } from "@/features/dashboard/ErrorState";
+import { getApiErrorMessage } from "@/lib/errorMessages";
+import { ErrorState } from "@/components/ui/error-state";
 import { MonthlyGamesChart } from "@/features/dashboard/MonthlyGamesChart";
 import { RatingHistoryChart } from "@/features/dashboard/RatingHistoryChart";
 import { RecentGamesSection } from "@/features/dashboard/RecentGamesSection";
@@ -32,8 +32,9 @@ async function loadDashboardPageData(): Promise<DashboardPageData> {
     const openingsById = new Map(openings.map((opening) => [opening.id, opening.name]));
     return { ok: true, dashboard, openingsById };
   } catch (error) {
-    const message =
-      error instanceof ApiError ? getDashboardErrorMessage(error) : "統計情報の取得に失敗しました。";
+    const message = error instanceof ApiError
+      ? getApiErrorMessage(error, "統計情報の取得に失敗しました。")
+      : "統計情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }

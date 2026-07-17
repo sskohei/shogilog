@@ -5,7 +5,8 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { updateMemoAction } from "@/features/games/actions";
-import { initialSimpleActionState } from "@/features/games/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 
 export function MemoSection({
   gameId,
@@ -19,6 +20,7 @@ export function MemoSection({
     updateMemoAction.bind(null, gameId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
 
   // action が完了して state 参照が更新された瞬間にだけ編集モードを終了する
   // (レンダー中の state 調整パターン: https://react.dev/learn/you-might-not-need-an-effect)

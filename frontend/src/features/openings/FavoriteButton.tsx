@@ -7,7 +7,8 @@ import {
   addFavoriteOpeningAction,
   removeFavoriteOpeningAction,
 } from "@/features/openings/actions";
-import { initialSimpleActionState } from "@/features/openings/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 
 export function FavoriteButton({
   openingId,
@@ -21,6 +22,7 @@ export function FavoriteButton({
     action.bind(null, openingId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
 
   return (
     <form action={formAction} className="inline-flex items-center gap-2">

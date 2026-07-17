@@ -4,13 +4,15 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { deleteTagAction } from "@/features/tags/actions";
-import { initialSimpleActionState } from "@/features/tags/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 
 export function DeleteTagButton({ tagId }: { tagId: string }) {
   const [state, formAction, pending] = useActionState(
     deleteTagAction.bind(null, tagId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
 
   return (
     <form

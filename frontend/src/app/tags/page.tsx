@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 import { ApiError } from "@/lib/fetcher";
 import { fetchTags } from "@/services/api/tags";
-import { ErrorState } from "@/features/tags/ErrorState";
+import { ErrorState } from "@/components/ui/error-state";
 import { TagForm } from "@/features/tags/TagForm";
 import { TagList } from "@/features/tags/TagList";
-import { getTagsErrorMessage } from "@/features/tags/errors";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { Tag } from "@/types/tag";
 
 export const metadata: Metadata = {
@@ -20,7 +20,9 @@ async function loadTagsPageData(): Promise<TagsPageData> {
     return { ok: true, tags };
   } catch (error) {
     const message =
-      error instanceof ApiError ? getTagsErrorMessage(error) : "タグ情報の取得に失敗しました。";
+      error instanceof ApiError
+        ? getApiErrorMessage(error, "タグ情報の取得に失敗しました。")
+        : "タグ情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }

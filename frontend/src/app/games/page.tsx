@@ -6,10 +6,10 @@ import { ApiError } from "@/lib/fetcher";
 import { fetchGames } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
 import { EmptyState } from "@/features/games/EmptyState";
-import { ErrorState } from "@/features/games/ErrorState";
-import { getGamesErrorMessage } from "@/features/games/errors";
 import { GamesPagination } from "@/features/games/GamesPagination";
 import { GamesTable } from "@/features/games/GamesTable";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { GameListResponse } from "@/types/game";
 
 export const metadata: Metadata = {
@@ -40,7 +40,9 @@ async function loadGamesPageData(page: number, limit: number): Promise<GamesPage
     return { ok: true, games, openingsById };
   } catch (error) {
     const message =
-      error instanceof ApiError ? getGamesErrorMessage(error) : "対局情報の取得に失敗しました。";
+      error instanceof ApiError
+        ? getApiErrorMessage(error, "対局情報の取得に失敗しました。")
+        : "対局情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }

@@ -3,10 +3,12 @@
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createTagAction, updateTagAction } from "@/features/tags/actions";
 import { initialTagFormState } from "@/features/tags/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
 import type { Tag } from "@/types/tag";
 
 const DEFAULT_COLOR = "#94a3b8";
@@ -23,6 +25,7 @@ export function TagForm({
   const action =
     mode === "edit" && tag ? updateTagAction.bind(null, tag.id) : createTagAction;
   const [state, formAction, pending] = useActionState(action, initialTagFormState);
+  useActionErrorToast(state.message);
   const [resetKey, setResetKey] = useState(0);
 
   // action が完了して state 参照が更新された瞬間にだけ後処理を行う
@@ -52,11 +55,7 @@ export function TagForm({
           aria-invalid={state.errors.name ? true : undefined}
           aria-describedby={state.errors.name ? "name-error" : undefined}
         />
-        {state.errors.name && (
-          <p id="name-error" className="text-sm text-destructive">
-            {state.errors.name[0]}
-          </p>
-        )}
+        <FieldError id="name-error" messages={state.errors.name} />
       </div>
 
       <div className="space-y-1.5">
@@ -70,11 +69,7 @@ export function TagForm({
           aria-describedby={state.errors.color ? "color-error" : undefined}
           className="h-8 w-14 cursor-pointer rounded-lg border border-input bg-transparent p-0.5"
         />
-        {state.errors.color && (
-          <p id="color-error" className="text-sm text-destructive">
-            {state.errors.color[0]}
-          </p>
-        )}
+        <FieldError id="color-error" messages={state.errors.color} />
       </div>
 
       <Button type="submit" size="sm" disabled={pending}>

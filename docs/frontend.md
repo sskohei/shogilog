@@ -390,20 +390,29 @@ Next.js App Routerを使用します。
 
 ## 13.1 APIエラー
 
+バックエンドのエラーレスポンスは `{"detail": string}` 形式(FastAPI標準)。`frontend/src/lib/fetcher.ts` の `apiFetch`/`ApiError` が唯一の変換窓口で、`kind: "config" | "network" | "http"` に分類する。
+
 ```json
 {
-  "message": "Error",
-  "code": "ERROR_CODE"
+  "detail": "Game not found."
 }
 ```
+
+422のバリデーションエラーのみ `detail` が配列になる。フィールド単位でフォームへ反映する仕組みは未実装(issue QA-2で対応予定)。
+
+エラーメッセージの日本語化は `frontend/src/lib/errorMessages.ts` の `getApiErrorMessage(error, fallback)` に集約する。config/network/401/5xxは共通の文言、それ以外(400/404/409/422など)はfeatureごとのfallback文言を返す。ページ読み込み(Server Component)とServer Action(mutation)のどちらのエラー処理も同じ関数を使い、バックエンドの生の `detail` 文字列がそのままUIに表示されないようにする。
 
 ---
 
 ## 13.2 UI表示
 
-- トースト表示
-- エラーバナー
-- フォールバックUI
+エラーの見せ方は発生箇所によって役割を分ける。
+
+- **ページ読み込み失敗(read)**: `@/components/ui/error-state` の `ErrorState` バナーを表示する。
+- **Server Actionのmutation失敗**: `@/lib/toast` の `showErrorToast` でトースト通知を表示する。フォーム側は `@/lib/useActionErrorToast` の `useActionErrorToast(state.message ?? state.error)` フックを呼び出すことで、`state` が更新されるたびにトーストを発火する。アクセシビリティ用のインライン `<p aria-live="polite">` によるメッセージ表示はトーストと併用して残す。
+- **未捕捉の描画時例外**: `frontend/src/app/error.tsx`(App Routerのルートレベル例外境界)がフォールバックUIを表示する。
+
+トーストは shadcn の `sonner` ベースコンポーネント(`frontend/src/components/ui/sonner.tsx`)を使用し、`frontend/src/app/layout.tsx` に `<Toaster />` をマウントしている。
 
 ---
 

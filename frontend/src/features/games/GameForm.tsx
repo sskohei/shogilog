@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -16,17 +17,9 @@ import {
   usesRankRating,
 } from "@/features/games/platforms";
 import { initialGameFormState } from "@/features/games/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
 import type { Game } from "@/types/game";
 import type { Opening } from "@/types/opening";
-
-function FieldError({ id, messages }: { id: string; messages?: string[] }) {
-  if (!messages) return null;
-  return (
-    <p id={id} className="text-sm text-destructive">
-      {messages[0]}
-    </p>
-  );
-}
 
 function toDatetimeLocalValue(iso: string): string {
   const date = new Date(iso);
@@ -53,6 +46,7 @@ export function GameForm({
     action,
     initialGameFormState
   );
+  useActionErrorToast(state.message);
   const [platformId, setPlatformId] = useState(
     game ? String(game.platform_id) : ""
   );

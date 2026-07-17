@@ -81,7 +81,7 @@ describe("updateMemoAction", () => {
 
     const state = await updateMemoAction("game-1", {}, formData);
 
-    expect(state.error).toBe("対局が見つかりません");
+    expect(state.error).toBe("メモの保存に失敗しました。");
     expect(revalidatePathMock).not.toHaveBeenCalled();
   });
 });
@@ -128,7 +128,7 @@ describe("createGameAction", () => {
 
     const state = await createGameAction({ errors: {} }, makeValidFormData());
 
-    expect(state.message).toBe("対局の登録に失敗しました");
+    expect(state.message).toBe("対局の登録に失敗しました。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });
@@ -178,7 +178,7 @@ describe("updateGameAction", () => {
       makeValidFormData()
     );
 
-    expect(state.message).toBe("対局の更新に失敗しました");
+    expect(state.message).toBe("対局の更新に失敗しました。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });
@@ -205,7 +205,7 @@ describe("deleteGameAction", () => {
 
     const state = await deleteGameAction("game-1", {}, new FormData());
 
-    expect(state.error).toBe("対局の削除に失敗しました");
+    expect(state.error).toBe("対局の削除に失敗しました。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });

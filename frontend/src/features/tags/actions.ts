@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/fetcher";
 import { createTag, deleteTag, updateTag } from "@/services/api/tags";
-import type { SimpleActionState, TagFormState } from "@/features/tags/types";
+import type { TagFormState } from "@/features/tags/types";
+import { getApiErrorMessage } from "@/lib/errorMessages";
+import type { SimpleActionState } from "@/types/actionState";
 import { toOptionalColor, validateTagInput } from "@/features/tags/validation";
 import type { TagCreatePayload } from "@/types/tag";
 
@@ -32,8 +34,9 @@ export async function createTagAction(
   } catch (error) {
     return {
       errors: {},
-      message:
-        error instanceof ApiError ? error.message : "タグの作成に失敗しました。",
+      message: error instanceof ApiError
+        ? getApiErrorMessage(error, "タグの作成に失敗しました。")
+        : "タグの作成に失敗しました。",
     };
   }
 
@@ -66,8 +69,9 @@ export async function updateTagAction(
   } catch (error) {
     return {
       errors: {},
-      message:
-        error instanceof ApiError ? error.message : "タグの更新に失敗しました。",
+      message: error instanceof ApiError
+        ? getApiErrorMessage(error, "タグの更新に失敗しました。")
+        : "タグの更新に失敗しました。",
     };
   }
 
@@ -84,8 +88,9 @@ export async function deleteTagAction(
     await deleteTag(tagId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "タグの削除に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "タグの削除に失敗しました。")
+        : "タグの削除に失敗しました。",
     };
   }
 

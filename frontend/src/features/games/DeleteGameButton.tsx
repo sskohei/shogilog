@@ -4,13 +4,15 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { deleteGameAction } from "@/features/games/actions";
-import { initialSimpleActionState } from "@/features/games/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 
 export function DeleteGameButton({ gameId }: { gameId: string }) {
   const [state, formAction, pending] = useActionState(
     deleteGameAction.bind(null, gameId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
 
   return (
     <form

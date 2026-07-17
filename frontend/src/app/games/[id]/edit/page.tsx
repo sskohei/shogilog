@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/fetcher";
 import { fetchGame } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
-import { ErrorState } from "@/features/games/ErrorState";
-import { getGamesErrorMessage } from "@/features/games/errors";
 import { GameForm } from "@/features/games/GameForm";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { Game } from "@/types/game";
 import type { Opening } from "@/types/opening";
 
@@ -27,7 +27,9 @@ async function loadEditGamePageData(id: string): Promise<EditGamePageData> {
       notFound();
     }
     const message =
-      error instanceof ApiError ? getGamesErrorMessage(error) : "対局情報の取得に失敗しました。";
+      error instanceof ApiError
+        ? getApiErrorMessage(error, "対局情報の取得に失敗しました。")
+        : "対局情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }

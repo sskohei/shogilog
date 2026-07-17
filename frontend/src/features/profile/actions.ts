@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/fetcher";
 import { updatePlatformRating, updateProfile } from "@/services/api/profile";
-import type {
-  ProfileFormState,
-  SimpleActionState,
-} from "@/features/profile/types";
+import type { ProfileFormState } from "@/features/profile/types";
 import { toOptionalString, validateProfileInput } from "@/features/profile/validation";
+import { getApiErrorMessage } from "@/lib/errorMessages";
+import type { SimpleActionState } from "@/types/actionState";
 import type {
   PlatformRatingUpsertPayload,
   ProfileUpdatePayload,
@@ -38,8 +37,9 @@ export async function updateProfileAction(
   } catch (error) {
     return {
       errors: {},
-      message:
-        error instanceof ApiError ? error.message : "プロフィールの更新に失敗しました。",
+      message: error instanceof ApiError
+        ? getApiErrorMessage(error, "プロフィールの更新に失敗しました。")
+        : "プロフィールの更新に失敗しました。",
     };
   }
 
@@ -70,8 +70,9 @@ export async function updatePlatformRatingAction(
     await updatePlatformRating(platformId, payload);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "レートの更新に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "レートの更新に失敗しました。")
+        : "レートの更新に失敗しました。",
     };
   }
 

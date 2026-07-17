@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 import { ApiError } from "@/lib/fetcher";
 import { fetchOpenings } from "@/services/api/openings";
-import { ErrorState } from "@/features/games/ErrorState";
-import { getGamesErrorMessage } from "@/features/games/errors";
 import { GameForm } from "@/features/games/GameForm";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { Opening } from "@/types/opening";
 
 export const metadata: Metadata = {
@@ -21,7 +21,9 @@ async function loadNewGamePageData(): Promise<NewGamePageData> {
     return { ok: true, openings };
   } catch (error) {
     const message =
-      error instanceof ApiError ? getGamesErrorMessage(error) : "対局情報の取得に失敗しました。";
+      error instanceof ApiError
+        ? getApiErrorMessage(error, "対局情報の取得に失敗しました。")
+        : "対局情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }
