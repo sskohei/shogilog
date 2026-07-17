@@ -68,9 +68,9 @@ describe("updatePlatformRatingAction", () => {
     formData.set("has_played", "not_played");
     formData.set("rating", "1500");
 
-    await updatePlatformRatingAction(1, {}, formData);
+    await updatePlatformRatingAction(2, { errors: {} }, formData);
 
-    expect(updatePlatformRatingMock).toHaveBeenCalledWith(1, {
+    expect(updatePlatformRatingMock).toHaveBeenCalledWith(2, {
       has_played: false,
       rating: null,
       rank: null,
@@ -84,12 +84,34 @@ describe("updatePlatformRatingAction", () => {
     formData.set("has_played", "played");
     formData.set("rating", "1500");
 
-    await updatePlatformRatingAction(1, {}, formData);
+    await updatePlatformRatingAction(2, { errors: {} }, formData);
 
-    expect(updatePlatformRatingMock).toHaveBeenCalledWith(1, {
+    expect(updatePlatformRatingMock).toHaveBeenCalledWith(2, {
       has_played: true,
       rating: 1500,
       rank: null,
     });
+  });
+
+  it("整数でないレーティングを送信した場合はフィールドエラーを返し、updatePlatformRating を呼び出さない", async () => {
+    const formData = new FormData();
+    formData.set("has_played", "played");
+    formData.set("rating", "abc");
+
+    const state = await updatePlatformRatingAction(2, { errors: {} }, formData);
+
+    expect(state.errors.rating).toBeDefined();
+    expect(updatePlatformRatingMock).not.toHaveBeenCalled();
+  });
+
+  it("段位ラダーに無い値を送信した場合はフィールドエラーを返し、updatePlatformRating を呼び出さない", async () => {
+    const formData = new FormData();
+    formData.set("has_played", "played");
+    formData.set("rank", "十段");
+
+    const state = await updatePlatformRatingAction(1, { errors: {} }, formData);
+
+    expect(state.errors.rank).toBeDefined();
+    expect(updatePlatformRatingMock).not.toHaveBeenCalled();
   });
 });

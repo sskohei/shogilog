@@ -74,7 +74,7 @@ describe("PlatformRatingRow", () => {
   });
 
   it("保存ボタンをクリックすると updatePlatformRatingAction を呼び出す", async () => {
-    mockedUpdatePlatformRatingAction.mockResolvedValue({});
+    mockedUpdatePlatformRatingAction.mockResolvedValue({ errors: {} });
     const rating: PlatformRating = {
       platform_id: 2,
       has_played: true,

@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
+from app.core.platforms import is_valid_rank, is_valid_rating_value
 from app.repositories.platform_ratings import PlatformRatingRepository
 from app.repositories.platforms import PlatformRepository
 from app.repositories.profile import ProfileRepository
@@ -81,6 +82,21 @@ class ProfileService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Platform not found.",
             )
+
+        if payload.has_played:
+            if payload.rating is not None and not is_valid_rating_value(
+                platform_id, payload.rating
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Rating value is out of range for this platform.",
+                )
+
+            if not is_valid_rank(platform_id, payload.rank):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Rank value is not valid for this platform.",
+                )
 
         data = payload.model_dump(mode="json")
 

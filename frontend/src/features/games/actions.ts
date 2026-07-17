@@ -17,11 +17,46 @@ import {
   toOptionalInt,
   toOptionalString,
   validateGameInput,
+  type GameFormFieldErrors,
   type GameFormInput,
 } from "@/features/games/validation";
+import { getApiErrorFieldNames } from "@/lib/apiFieldErrors";
 import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { SimpleActionState } from "@/types/actionState";
 import type { GameCreatePayload, GameResult, PlayerSide } from "@/types/game";
+
+const GAME_FIELD_ERROR_MESSAGES: Record<keyof GameFormFieldErrors, string> = {
+  platform_id: "対局サービスを選択してください",
+  played_at: "対局日時を入力してください",
+  result: "結果を選択してください",
+  side: "手番を選択してください",
+  my_opening_id: "戦法の指定が正しくありません",
+  opponent_opening_id: "戦法の指定が正しくありません",
+  rating_before: "レーティングの値が正しくありません",
+  rating_after: "レーティングの値が正しくありません",
+  opponent_name: "対戦相手名が長すぎます",
+  opponent_rating: "レーティングの値が正しくありません",
+  rank_before: "段位の指定が正しくありません",
+  rank_after: "段位の指定が正しくありません",
+  opponent_rank: "段位の指定が正しくありません",
+  memo: "メモが長すぎます",
+};
+
+function mapGameFieldErrors(error: ApiError): GameFormFieldErrors {
+  const fieldNames = getApiErrorFieldNames(error);
+  const errors: GameFormFieldErrors = {};
+
+  for (const [field, message] of Object.entries(GAME_FIELD_ERROR_MESSAGES) as [
+    keyof GameFormFieldErrors,
+    string,
+  ][]) {
+    if (fieldNames.has(field)) {
+      errors[field] = [message];
+    }
+  }
+
+  return errors;
+}
 
 export async function updateMemoAction(
   gameId: string,
@@ -59,13 +94,11 @@ function readGameFormInput(formData: FormData): GameFormInput {
     rank_before: formData.get("rank_before"),
     rank_after: formData.get("rank_after"),
     opponent_rank: formData.get("opponent_rank"),
+    memo: formData.get("memo"),
   };
 }
 
-function buildGameCreatePayload(
-  input: GameFormInput,
-  formData: FormData
-): GameCreatePayload {
+function buildGameCreatePayload(input: GameFormInput): GameCreatePayload {
   return {
     platform_id: Number(input.platform_id),
     played_at: new Date(input.played_at as string).toISOString(),
@@ -80,7 +113,7 @@ function buildGameCreatePayload(
     rank_before: toOptionalString(input.rank_before),
     rank_after: toOptionalString(input.rank_after),
     opponent_rank: toOptionalString(input.opponent_rank),
-    memo: toOptionalString(formData.get("memo")),
+    memo: toOptionalString(input.memo),
   };
 }
 
@@ -95,12 +128,18 @@ export async function createGameAction(
     return { errors };
   }
 
-  const payload = buildGameCreatePayload(input, formData);
+  const payload = buildGameCreatePayload(input);
 
   let id: string;
   try {
     id = await createGame(payload);
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      const fieldErrors = mapGameFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        return { errors: fieldErrors, message: "入力内容を確認してください。" };
+      }
+    }
     return {
       errors: {},
       message: error instanceof ApiError
@@ -124,11 +163,17 @@ export async function updateGameAction(
     return { errors };
   }
 
-  const payload = buildGameCreatePayload(input, formData);
+  const payload = buildGameCreatePayload(input);
 
   try {
     await updateGame(gameId, payload);
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      const fieldErrors = mapGameFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        return { errors: fieldErrors, message: "入力内容を確認してください。" };
+      }
+    }
     return {
       errors: {},
       message: error instanceof ApiError

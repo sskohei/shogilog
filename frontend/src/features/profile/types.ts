@@ -1,4 +1,7 @@
-import type { ProfileFormFieldErrors } from "@/features/profile/validation";
+import type {
+  PlatformRatingFieldErrors,
+  ProfileFormFieldErrors,
+} from "@/features/profile/validation";
 
 export type ProfileFormState = {
   errors: ProfileFormFieldErrors;
@@ -6,3 +9,12 @@ export type ProfileFormState = {
 };
 
 export const initialProfileFormState: ProfileFormState = { errors: {} };
+
+export type PlatformRatingActionState = {
+  errors: PlatformRatingFieldErrors;
+  message?: string;
+};
+
+export const initialPlatformRatingActionState: PlatformRatingActionState = {
+  errors: {},
+};

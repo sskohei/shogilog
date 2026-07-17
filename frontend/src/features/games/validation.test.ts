@@ -22,6 +22,7 @@ function makeValidInput(overrides: Partial<GameFormInput> = {}): GameFormInput {
     rank_before: null,
     rank_after: null,
     opponent_rank: null,
+    memo: null,
     ...overrides,
   };
 }
@@ -137,6 +138,18 @@ describe("validateGameInput", () => {
     );
 
     expect(errors.rank_before).toBeUndefined();
+  });
+
+  it("memoが2000文字を超える場合はエラーになる", () => {
+    const errors = validateGameInput(makeValidInput({ memo: "a".repeat(2001) }));
+
+    expect(errors.memo).toBeDefined();
+  });
+
+  it("memoが2000文字以内の場合はエラーにならない", () => {
+    const errors = validateGameInput(makeValidInput({ memo: "a".repeat(2000) }));
+
+    expect(errors.memo).toBeUndefined();
   });
 });
 

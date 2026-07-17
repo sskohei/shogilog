@@ -163,7 +163,7 @@ def test_list_platform_ratings_merges_saved_rows():
     service.upsert_platform_rating(
         profile_repository.user_id,
         1,
-        PlatformRatingUpsert(has_played=True, rating=1500),
+        PlatformRatingUpsert(has_played=True, rating=75),
     )
 
     ratings = service.list_platform_ratings(profile_repository.user_id)
@@ -171,7 +171,7 @@ def test_list_platform_ratings_merges_saved_rows():
     platform_2 = next(r for r in ratings if r["platform_id"] == 2)
 
     assert platform_1["has_played"] is True
-    assert platform_1["rating"] == 1500
+    assert platform_1["rating"] == 75
     assert platform_2["has_played"] is False
 
 
@@ -205,3 +205,35 @@ def test_upsert_platform_rating_nulls_values_when_not_played():
 
     assert result["rating"] is None
     assert result["rank"] is None
+
+
+def test_upsert_platform_rating_rejects_percentage_rating_over_100():
+    profile_repository = FakeProfileRepository()
+    service = make_service(
+        profile_repository, FakePlatformRatingRepository(), FakePlatformRepository()
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        service.upsert_platform_rating(
+            profile_repository.user_id,
+            1,
+            PlatformRatingUpsert(has_played=True, rating=101),
+        )
+
+    assert exc.value.status_code == 400
+
+
+def test_upsert_platform_rating_rejects_rank_outside_ladder():
+    profile_repository = FakeProfileRepository()
+    service = make_service(
+        profile_repository, FakePlatformRatingRepository(), FakePlatformRepository()
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        service.upsert_platform_rating(
+            profile_repository.user_id,
+            1,
+            PlatformRatingUpsert(has_played=True, rating=50, rank="十段"),
+        )
+
+    assert exc.value.status_code == 400

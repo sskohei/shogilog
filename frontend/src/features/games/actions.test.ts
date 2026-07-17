@@ -131,6 +131,20 @@ describe("createGameAction", () => {
     expect(state.message).toBe("対局の登録に失敗しました。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
+
+  it("422でフィールドエラーが返された場合は該当フィールドにエラーを反映する", async () => {
+    createGameMock.mockRejectedValue(
+      new ApiError("http", "リクエストに失敗しました (status: 422)", 422, [
+        { loc: ["body", "rating_after"], msg: "...", type: "value_error" },
+      ])
+    );
+
+    const state = await createGameAction({ errors: {} }, makeValidFormData());
+
+    expect(state.errors.rating_after).toBeDefined();
+    expect(state.message).toBe("入力内容を確認してください。");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("updateGameAction", () => {
@@ -179,6 +193,24 @@ describe("updateGameAction", () => {
     );
 
     expect(state.message).toBe("対局の更新に失敗しました。");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("422でフィールドエラーが返された場合は該当フィールドにエラーを反映する", async () => {
+    updateGameMock.mockRejectedValue(
+      new ApiError("http", "リクエストに失敗しました (status: 422)", 422, [
+        { loc: ["body", "rank_after"], msg: "...", type: "value_error" },
+      ])
+    );
+
+    const state = await updateGameAction(
+      "game-1",
+      { errors: {} },
+      makeValidFormData()
+    );
+
+    expect(state.errors.rank_after).toBeDefined();
+    expect(state.message).toBe("入力内容を確認してください。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });

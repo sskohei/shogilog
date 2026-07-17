@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+import pydantic
 import pytest
 from fastapi import HTTPException
 
@@ -27,10 +28,10 @@ class FakeGameRepository:
             "side": "sente",
             "my_opening_id": None,
             "opponent_opening_id": None,
-            "rating_before": 1200,
-            "rating_after": 1210,
+            "rating_before": 60,
+            "rating_after": 75,
             "opponent_name": "player123",
-            "opponent_rating": 1190,
+            "opponent_rating": 55,
             "rank_before": None,
             "rank_after": None,
             "opponent_rank": None,
@@ -78,13 +79,41 @@ class FakeRatingRepository:
         return record
 
 
+class FakePlatformRepository:
+    def __init__(self) -> None:
+        self.platforms = {
+            1: {"id": 1, "name": "将棋ウォーズ"},
+            2: {"id": 2, "name": "将棋クエスト"},
+            3: {"id": 3, "name": "棋桜"},
+            4: {"id": 4, "name": "81道場"},
+        }
+
+    def get_by_id(self, platform_id: int) -> dict | None:
+        return self.platforms.get(platform_id)
+
+
+class FakeOpeningRepository:
+    def __init__(self) -> None:
+        self.openings = {
+            6: {"id": 6, "name": "四間飛車"},
+            7: {"id": 7, "name": "三間飛車"},
+        }
+
+    def get_by_id(self, opening_id: int) -> dict | None:
+        return self.openings.get(opening_id)
+
+
 def make_service(
     repository: FakeGameRepository,
     rating_repository: FakeRatingRepository | None = None,
+    platform_repository: FakePlatformRepository | None = None,
+    opening_repository: FakeOpeningRepository | None = None,
 ) -> GameService:
     return GameService(
         repository=repository,
         rating_repository=rating_repository or FakeRatingRepository(),
+        platform_repository=platform_repository or FakePlatformRepository(),
+        opening_repository=opening_repository or FakeOpeningRepository(),
     )
 
 
@@ -94,10 +123,10 @@ def make_create_payload() -> GameCreate:
         played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
         result=GameResult.WIN,
         side=PlayerSide.SENTE,
-        rating_before=1200,
-        rating_after=1210,
+        rating_before=60,
+        rating_after=75,
         opponent_name="player123",
-        opponent_rating=1190,
+        opponent_rating=55,
         memo="test",
     )
 
@@ -137,7 +166,7 @@ def test_create_game_records_rating_history():
     assert len(rating_repository.created) == 1
     record = rating_repository.created[0]
     assert record["platform_id"] == 1
-    assert record["rating"] == 1210
+    assert record["rating"] == 75
     assert record["game_id"] == game["id"]
     assert record["recorded_at"] == "2026-07-05T10:00:00Z"
     assert record["user_id"] == str(repository.user_id)
@@ -209,11 +238,11 @@ def test_update_game_passes_through_rank_fields():
     game = service.update_game(
         repository.user_id,
         repository.game_id,
-        GameUpdate(rank_before="五級", opponent_rank="三級"),
+        GameUpdate(rank_before="5級", opponent_rank="3級"),
     )
 
-    assert game["rank_before"] == "五級"
-    assert game["opponent_rank"] == "三級"
+    assert game["rank_before"] == "5級"
+    assert game["opponent_rank"] == "3級"
 
 
 def test_update_game_rejects_empty_payload():
@@ -277,3 +306,166 @@ def test_delete_game_raises_404_for_missing_game():
         service.delete_game(repository.user_id, uuid4())
 
     assert exc.value.status_code == 404
+
+
+def test_game_create_rejects_percentage_rating_over_100():
+    with pytest.raises(pydantic.ValidationError):
+        GameCreate(
+            platform_id=1,
+            played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+            result=GameResult.WIN,
+            side=PlayerSide.SENTE,
+            rating_after=101,
+        )
+
+
+def test_game_create_rejects_negative_rating():
+    with pytest.raises(pydantic.ValidationError):
+        GameCreate(
+            platform_id=2,
+            played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+            result=GameResult.WIN,
+            side=PlayerSide.SENTE,
+            rating_after=-1,
+        )
+
+
+def test_game_create_rejects_rank_outside_ladder():
+    with pytest.raises(pydantic.ValidationError):
+        GameCreate(
+            platform_id=1,
+            played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+            result=GameResult.WIN,
+            side=PlayerSide.SENTE,
+            rank_after="十段",
+        )
+
+
+def test_game_create_rejects_rank_for_rating_only_platform():
+    with pytest.raises(pydantic.ValidationError):
+        GameCreate(
+            platform_id=2,
+            played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+            result=GameResult.WIN,
+            side=PlayerSide.SENTE,
+            rank_after="初段",
+        )
+
+
+def test_game_create_rejects_memo_over_max_length():
+    with pytest.raises(pydantic.ValidationError):
+        GameCreate(
+            platform_id=1,
+            played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+            result=GameResult.WIN,
+            side=PlayerSide.SENTE,
+            memo="a" * 2001,
+        )
+
+
+def test_create_game_raises_404_for_missing_platform():
+    repository = FakeGameRepository()
+    service = make_service(repository, platform_repository=FakePlatformRepository())
+    payload = GameCreate(
+        platform_id=99,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        service.create_game(repository.user_id, payload)
+
+    assert exc.value.status_code == 404
+
+
+def test_create_game_raises_404_for_missing_opening():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+        my_opening_id=999,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        service.create_game(repository.user_id, payload)
+
+    assert exc.value.status_code == 404
+
+
+def test_create_game_rejects_kifu_path_outside_own_scope():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+        kifu_path="someone-else/game.kif",
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        service.create_game(repository.user_id, payload)
+
+    assert exc.value.status_code == 400
+
+
+def test_create_game_accepts_kifu_path_within_own_scope():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+        kifu_path=f"{repository.user_id}/game.kif",
+    )
+
+    game = service.create_game(repository.user_id, payload)
+
+    assert game["kifu_path"] == f"{repository.user_id}/game.kif"
+
+
+def test_update_game_rejects_rating_out_of_range_when_merged_with_existing_platform():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.update_game(
+            repository.user_id,
+            repository.game_id,
+            GameUpdate(rating_after=150),
+        )
+
+    assert exc.value.status_code == 400
+
+
+def test_update_game_raises_404_for_missing_platform():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.update_game(
+            repository.user_id,
+            repository.game_id,
+            GameUpdate(platform_id=99),
+        )
+
+    assert exc.value.status_code == 404
+
+
+def test_update_game_rejects_kifu_path_outside_own_scope():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.update_game(
+            repository.user_id,
+            repository.game_id,
+            GameUpdate(kifu_path="someone-else/game.kif"),
+        )
+
+    assert exc.value.status_code == 400

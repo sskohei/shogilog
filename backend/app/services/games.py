@@ -3,10 +3,17 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
+from app.core.platforms import is_valid_rank, is_valid_rating_value
 from app.repositories.games import GameRepository
+from app.repositories.openings import OpeningRepository
+from app.repositories.platforms import PlatformRepository
 from app.repositories.ratings import RatingRepository
 from app.schemas.common import Pagination
 from app.schemas.game import GameCreate, GameListFilters, GameUpdate
+
+RATING_FIELDS = ("rating_before", "rating_after", "opponent_rating")
+RANK_FIELDS = ("rank_before", "rank_after", "opponent_rank")
+OPENING_FIELDS = ("my_opening_id", "opponent_opening_id")
 
 
 class GameService:
@@ -18,9 +25,13 @@ class GameService:
         self,
         repository: GameRepository | None = None,
         rating_repository: RatingRepository | None = None,
+        platform_repository: PlatformRepository | None = None,
+        opening_repository: OpeningRepository | None = None,
     ) -> None:
         self.repository = repository or GameRepository()
         self.rating_repository = rating_repository or RatingRepository()
+        self.platform_repository = platform_repository or PlatformRepository()
+        self.opening_repository = opening_repository or OpeningRepository()
 
     def list_games(
         self,
@@ -57,7 +68,29 @@ class GameService:
 
         return self.repository.create_signed_kifu_url(kifu_path)
 
+    def _validate_kifu_path(self, user_id: UUID, kifu_path: str | None) -> None:
+        if kifu_path is not None and not kifu_path.startswith(f"{user_id}/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="kifu_path must be scoped to the authenticated user.",
+            )
+
     def create_game(self, user_id: UUID, payload: GameCreate) -> dict:
+        if self.platform_repository.get_by_id(payload.platform_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Platform not found.",
+            )
+
+        for opening_id in (payload.my_opening_id, payload.opponent_opening_id):
+            if opening_id is not None and self.opening_repository.get_by_id(opening_id) is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Opening not found.",
+                )
+
+        self._validate_kifu_path(user_id, payload.kifu_path)
+
         data = payload.model_dump(mode="json")
         game = self.repository.create(user_id, data)
 
@@ -88,6 +121,49 @@ class GameService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No fields were provided for update.",
             )
+
+        existing = self.repository.get_by_id(user_id, game_id)
+
+        if existing is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Game not found.",
+            )
+
+        platform_id = data.get("platform_id", existing["platform_id"])
+
+        if "platform_id" in data and self.platform_repository.get_by_id(platform_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Platform not found.",
+            )
+
+        for field in OPENING_FIELDS:
+            if field in data and data[field] is not None:
+                if self.opening_repository.get_by_id(data[field]) is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Opening not found.",
+                    )
+
+        for field in RATING_FIELDS:
+            value = data[field] if field in data else existing.get(field)
+            if value is not None and not is_valid_rating_value(platform_id, value):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Rating value is out of range for this platform.",
+                )
+
+        for field in RANK_FIELDS:
+            value = data[field] if field in data else existing.get(field)
+            if not is_valid_rank(platform_id, value):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Rank value is not valid for this platform.",
+                )
+
+        if "kifu_path" in data:
+            self._validate_kifu_path(user_id, data["kifu_path"])
 
         game = self.repository.update(user_id, game_id, data)
 
