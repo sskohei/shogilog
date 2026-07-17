@@ -37,8 +37,7 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
       className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3 sm:grid-cols-4 sm:items-end"
     >
       <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">プラットフォーム</p>
-        <p className="text-sm font-medium">{getPlatformName(rating.platform_id)}</p>
+        <p className="text-s font-medium">{getPlatformName(rating.platform_id)}</p>
       </div>
 
       <div className="space-y-1">
@@ -46,7 +45,7 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
           className="text-xs text-muted-foreground"
           htmlFor={`has_played-${rating.platform_id}`}
         >
-          状態
+          プレイ状況
         </label>
         <Select
           id={`has_played-${rating.platform_id}`}
