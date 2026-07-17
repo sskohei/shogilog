@@ -26,3 +26,7 @@ class OpeningListResponse(BaseModel):
 
 class OpeningDataResponse(BaseModel):
     data: OpeningRead
+
+
+class FavoriteOpeningIdsResponse(BaseModel):
+    data: list[int]

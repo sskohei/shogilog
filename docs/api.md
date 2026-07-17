@@ -91,6 +91,8 @@ GET /games/{id}
 |---|---|---|
 |GET|/profile|プロフィール取得|
 |PUT|/profile|プロフィール更新|
+|GET|/profile/platform-ratings|プラットフォーム別レート一覧取得|
+|PUT|/profile/platform-ratings/{platform_id}|プラットフォーム別レート更新|
 
 ---
 
@@ -132,6 +134,9 @@ GET /games/{id}
 |---|---|---|
 |GET|/openings|一覧取得|
 |GET|/openings/{id}|詳細取得|
+|GET|/openings/favorites|お気に入り戦法ID一覧取得|
+|POST|/openings/{id}/favorite|お気に入り登録|
+|DELETE|/openings/{id}/favorite|お気に入り解除|
 
 ---
 
@@ -265,8 +270,7 @@ GET /api/v1/profile
     "id": "uuid",
     "display_name": "Shogi Player",
     "bio": "よろしくお願いします。",
-    "icon_url": "https://...",
-    "country": "Japan",
+    "avatar_url": null,
     "created_at": "2026-07-01T10:00:00Z",
     "updated_at": "2026-07-05T09:30:00Z"
   }
@@ -279,7 +283,7 @@ GET /api/v1/profile
 
 ## 概要
 
-プロフィールを更新します。
+プロフィールを更新します。`display_name`/`bio` は送信したフィールドのみ更新されます(部分更新)。
 
 ---
 
@@ -288,8 +292,7 @@ GET /api/v1/profile
 ```json
 {
   "display_name": "ShogiLog",
-  "bio": "四間飛車を研究しています。",
-  "country": "Japan"
+  "bio": "四間飛車を研究しています。"
 }
 ```
 
@@ -301,7 +304,6 @@ GET /api/v1/profile
 |---|---|
 |display_name|1〜30文字|
 |bio|500文字以内|
-|country|100文字以内|
 
 ---
 
@@ -309,7 +311,77 @@ GET /api/v1/profile
 
 ```json
 {
-  "message": "Profile updated successfully."
+  "data": {
+    "id": "uuid",
+    "display_name": "ShogiLog",
+    "bio": "四間飛車を研究しています。",
+    "avatar_url": null,
+    "created_at": "2026-07-01T10:00:00Z",
+    "updated_at": "2026-07-05T09:30:00Z"
+  }
+}
+```
+
+---
+
+## 10.1 GET /profile/platform-ratings
+
+### 概要
+
+プラットフォームごとの現在のレート/段級位を取得します。まだ登録されていないプラットフォームは `has_played: false` として補完されます(`ratings` の対局ごとの履歴とは独立したデータです)。
+
+---
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "platform_id": 1,
+      "has_played": true,
+      "rating": null,
+      "rank": "三段",
+      "updated_at": "2026-07-10T09:00:00Z"
+    },
+    {
+      "platform_id": 2,
+      "has_played": false,
+      "rating": null,
+      "rank": null,
+      "updated_at": null
+    }
+  ]
+}
+```
+
+---
+
+## 10.2 PUT /profile/platform-ratings/{platform_id}
+
+### 概要
+
+指定したプラットフォームの現在のレート/段級位を登録・更新します(upsert)。`has_played` が `false` の場合、`rating`/`rank` は無視され `null` として保存されます。
+
+---
+
+### Request
+
+```json
+{
+  "has_played": true,
+  "rating": null,
+  "rank": "三段"
+}
+```
+
+---
+
+### Response
+
+```json
+{
+  "message": "Platform rating updated successfully."
 }
 ```
 
@@ -745,6 +817,60 @@ GET /api/v1/games
 ### 概要
 
 戦法詳細を取得します。
+
+---
+
+## 16.3 GET /openings/favorites
+
+### 概要
+
+ログインユーザーのお気に入り戦法IDの一覧を取得します。
+
+---
+
+### Response
+
+```json
+{
+  "data": [6, 7]
+}
+```
+
+---
+
+## 16.4 POST /openings/{id}/favorite
+
+### 概要
+
+戦法をお気に入りに登録します。
+
+---
+
+### Response
+
+```json
+{
+  "message": "Opening added to favorites."
+}
+```
+
+---
+
+## 16.5 DELETE /openings/{id}/favorite
+
+### 概要
+
+戦法のお気に入りを解除します。
+
+---
+
+### Response
+
+```json
+{
+  "message": "Opening removed from favorites."
+}
+```
 
 ---
 

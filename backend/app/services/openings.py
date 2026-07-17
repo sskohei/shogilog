@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import HTTPException, status
 
 from app.repositories.openings import OpeningRepository
@@ -24,3 +26,36 @@ class OpeningService:
             )
 
         return opening
+
+    def list_favorite_ids(self, user_id: UUID) -> list[int]:
+        return self.repository.list_favorite_ids(user_id)
+
+    def add_favorite(self, user_id: UUID, opening_id: int) -> None:
+        if self.repository.get_by_id(opening_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Opening not found.",
+            )
+
+        if self.repository.favorite_exists(user_id, opening_id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Opening is already a favorite.",
+            )
+
+        self.repository.create_favorite(user_id, opening_id)
+
+    def remove_favorite(self, user_id: UUID, opening_id: int) -> None:
+        if self.repository.get_by_id(opening_id) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Opening not found.",
+            )
+
+        deleted = self.repository.delete_favorite(user_id, opening_id)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Opening is not a favorite.",
+            )
