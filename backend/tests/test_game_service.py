@@ -68,6 +68,26 @@ class FakeGameRepository:
         return self.signed_url
 
 
+class FakeRatingRepository:
+    def __init__(self) -> None:
+        self.created: list[dict] = []
+
+    def create(self, user_id: UUID, data: dict) -> dict:
+        record = {**data, "user_id": str(user_id)}
+        self.created.append(record)
+        return record
+
+
+def make_service(
+    repository: FakeGameRepository,
+    rating_repository: FakeRatingRepository | None = None,
+) -> GameService:
+    return GameService(
+        repository=repository,
+        rating_repository=rating_repository or FakeRatingRepository(),
+    )
+
+
 def make_create_payload() -> GameCreate:
     return GameCreate(
         platform_id=1,
@@ -84,7 +104,7 @@ def make_create_payload() -> GameCreate:
 
 def test_list_games_returns_pagination():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     games, pagination = service.list_games(
         repository.user_id,
@@ -98,7 +118,7 @@ def test_list_games_returns_pagination():
 
 def test_create_game_adds_user_scoped_payload():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     game = service.create_game(repository.user_id, make_create_payload())
 
@@ -107,9 +127,62 @@ def test_create_game_adds_user_scoped_payload():
     assert game["result"] == "win"
 
 
+def test_create_game_records_rating_history():
+    repository = FakeGameRepository()
+    rating_repository = FakeRatingRepository()
+    service = make_service(repository, rating_repository)
+
+    game = service.create_game(repository.user_id, make_create_payload())
+
+    assert len(rating_repository.created) == 1
+    record = rating_repository.created[0]
+    assert record["platform_id"] == 1
+    assert record["rating"] == 1210
+    assert record["game_id"] == game["id"]
+    assert record["recorded_at"] == "2026-07-05T10:00:00Z"
+    assert record["user_id"] == str(repository.user_id)
+    assert record["rank"] is None
+
+
+def test_create_game_records_rank_alongside_rating():
+    repository = FakeGameRepository()
+    rating_repository = FakeRatingRepository()
+    service = make_service(repository, rating_repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+        rating_before=25,
+        rating_after=30,
+        rank_before="初段",
+        rank_after="二段",
+    )
+
+    service.create_game(repository.user_id, payload)
+
+    assert rating_repository.created[0]["rank"] == "二段"
+
+
+def test_create_game_skips_rating_history_when_rating_after_missing():
+    repository = FakeGameRepository()
+    rating_repository = FakeRatingRepository()
+    service = make_service(repository, rating_repository)
+    payload = GameCreate(
+        platform_id=1,
+        played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
+        result=GameResult.WIN,
+        side=PlayerSide.SENTE,
+    )
+
+    service.create_game(repository.user_id, payload)
+
+    assert rating_repository.created == []
+
+
 def test_create_game_passes_through_rank_fields():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
     payload = GameCreate(
         platform_id=1,
         played_at=datetime(2026, 7, 5, 10, 0, tzinfo=UTC),
@@ -131,7 +204,7 @@ def test_create_game_passes_through_rank_fields():
 
 def test_update_game_passes_through_rank_fields():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     game = service.update_game(
         repository.user_id,
@@ -145,7 +218,7 @@ def test_update_game_passes_through_rank_fields():
 
 def test_update_game_rejects_empty_payload():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     with pytest.raises(HTTPException) as exc:
         service.update_game(
@@ -159,7 +232,7 @@ def test_update_game_rejects_empty_payload():
 
 def test_get_game_raises_404_for_missing_game():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     with pytest.raises(HTTPException) as exc:
         service.get_game(repository.user_id, uuid4())
@@ -169,7 +242,7 @@ def test_get_game_raises_404_for_missing_game():
 
 def test_get_kifu_url_returns_none_when_kifu_path_missing():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     url = service.get_kifu_url(repository.user_id, repository.game_id)
 
@@ -179,7 +252,7 @@ def test_get_kifu_url_returns_none_when_kifu_path_missing():
 def test_get_kifu_url_returns_signed_url_when_kifu_path_set():
     repository = FakeGameRepository()
     repository.game["kifu_path"] = "user-123/game-456.kif"
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     url = service.get_kifu_url(repository.user_id, repository.game_id)
 
@@ -188,7 +261,7 @@ def test_get_kifu_url_returns_signed_url_when_kifu_path_set():
 
 def test_get_kifu_url_raises_404_for_missing_game():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     with pytest.raises(HTTPException) as exc:
         service.get_kifu_url(repository.user_id, uuid4())
@@ -198,7 +271,7 @@ def test_get_kifu_url_raises_404_for_missing_game():
 
 def test_delete_game_raises_404_for_missing_game():
     repository = FakeGameRepository()
-    service = GameService(repository=repository)
+    service = make_service(repository)
 
     with pytest.raises(HTTPException) as exc:
         service.delete_game(repository.user_id, uuid4())

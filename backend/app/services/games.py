@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from app.repositories.games import GameRepository
+from app.repositories.ratings import RatingRepository
 from app.schemas.common import Pagination
 from app.schemas.game import GameCreate, GameListFilters, GameUpdate
 
@@ -13,8 +14,13 @@ class GameService:
     Business logic for game records.
     """
 
-    def __init__(self, repository: GameRepository | None = None) -> None:
+    def __init__(
+        self,
+        repository: GameRepository | None = None,
+        rating_repository: RatingRepository | None = None,
+    ) -> None:
         self.repository = repository or GameRepository()
+        self.rating_repository = rating_repository or RatingRepository()
 
     def list_games(
         self,
@@ -53,7 +59,21 @@ class GameService:
 
     def create_game(self, user_id: UUID, payload: GameCreate) -> dict:
         data = payload.model_dump(mode="json")
-        return self.repository.create(user_id, data)
+        game = self.repository.create(user_id, data)
+
+        if payload.rating_after is not None:
+            self.rating_repository.create(
+                user_id,
+                {
+                    "platform_id": payload.platform_id,
+                    "rating": payload.rating_after,
+                    "rank": payload.rank_after,
+                    "game_id": game["id"],
+                    "recorded_at": data["played_at"],
+                },
+            )
+
+        return game
 
     def update_game(
         self,

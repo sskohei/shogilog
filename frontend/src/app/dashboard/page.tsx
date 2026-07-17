@@ -6,6 +6,7 @@ import { fetchOpenings } from "@/services/api/openings";
 import { getDashboardErrorMessage } from "@/features/dashboard/errors";
 import { ErrorState } from "@/features/dashboard/ErrorState";
 import { MonthlyGamesChart } from "@/features/dashboard/MonthlyGamesChart";
+import { RatingHistoryChart } from "@/features/dashboard/RatingHistoryChart";
 import { RecentGamesSection } from "@/features/dashboard/RecentGamesSection";
 import { SummaryCards } from "@/features/dashboard/SummaryCards";
 import { getPlatformName } from "@/features/games/platforms";
@@ -79,6 +80,7 @@ export default async function DashboardPage() {
             />
           </div>
           <MonthlyGamesChart data={data.dashboard.monthly_stats} />
+          <RatingHistoryChart data={data.dashboard.rating_history} />
           <RecentGamesSection
             games={data.dashboard.recent_games}
             openingsById={data.openingsById}

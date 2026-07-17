@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class RatingBase(BaseModel):
     platform_id: int = Field(..., ge=1)
     rating: int
+    rank: str | None = None
     game_id: UUID | None = None
 
 
