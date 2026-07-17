@@ -3,16 +3,19 @@
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginAction } from "@/features/auth/actions";
 import { initialLoginFormState } from "@/features/auth/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(
     loginAction,
     initialLoginFormState
   );
+  useActionErrorToast(state.message);
   const [email, setEmail] = useState("");
 
   return (
@@ -31,11 +34,7 @@ export function LoginForm() {
           aria-invalid={state.errors.email ? true : undefined}
           aria-describedby={state.errors.email ? "email-error" : undefined}
         />
-        {state.errors.email && (
-          <p id="email-error" className="text-sm text-destructive">
-            {state.errors.email[0]}
-          </p>
-        )}
+        <FieldError id="email-error" messages={state.errors.email} />
       </div>
 
       <div className="space-y-1.5">
@@ -50,11 +49,7 @@ export function LoginForm() {
           aria-invalid={state.errors.password ? true : undefined}
           aria-describedby={state.errors.password ? "password-error" : undefined}
         />
-        {state.errors.password && (
-          <p id="password-error" className="text-sm text-destructive">
-            {state.errors.password[0]}
-          </p>
-        )}
+        <FieldError id="password-error" messages={state.errors.password} />
       </div>
 
       {state.message && (

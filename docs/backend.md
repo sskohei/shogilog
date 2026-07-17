@@ -98,18 +98,18 @@ app/
 │   └── supabase.py
 │
 ├── repositories/
-│   ├── game_repository.py
-│   ├── tag_repository.py
-│   ├── rating_repository.py
-│   ├── profile_repository.py
-│   └── opening_repository.py
+│   ├── games.py
+│   ├── tags.py
+│   ├── ratings.py
+│   ├── profile.py
+│   └── openings.py
 │
 ├── services/
-│   ├── game_service.py
-│   ├── tag_service.py
-│   ├── rating_service.py
-│   ├── profile_service.py
-│   └── dashboard_service.py
+│   ├── games.py
+│   ├── tags.py
+│   ├── ratings.py
+│   ├── profile.py
+│   └── dashboard.py
 │
 ├── schemas/
 │   ├── game.py
@@ -117,11 +117,6 @@ app/
 │   ├── profile.py
 │   ├── rating.py
 │   └── opening.py
-│
-├── utils/
-│   ├── datetime.py
-│   ├── validation.py
-│   └── exceptions.py
 │
 └── main.py
 ```
@@ -200,7 +195,7 @@ supabase.table("games").select("*").execute()
 - user_idは必ずサーバーで付与
 - Supabase RLSを必ず利用
 - 全APIはJWT必須
-- エラーは統一フォーマット
+- エラーは `fastapi.HTTPException` を使い、`{"detail": "<message>"}` 形式で返す(詳細は9章)
 
 ---
 
@@ -222,25 +217,58 @@ Supabase Client
 
 # 9. エラーハンドリング
 
-## 9.1 共通例外
+## 9.1 Service層でのエラー送出
+
+独自の例外クラスは持たず、Service層で `fastapi.HTTPException` を直接送出する。Router層でDBアクセスやビジネスロジックの例外処理を行わない(Service層に集約する)。
 
 ```python
-class AppException(Exception):
-    def __init__(self, message: str, code: str):
-        self.message = message
-        self.code = code
+from fastapi import HTTPException, status
+
+if game is None:
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Game not found.",
+    )
 ```
+
+`detail` は常に文字列(英語)。ステータスコードは状況に応じて使い分ける。
+
+| 状況 | ステータスコード |
+|---|---|
+| リソースが存在しない | 404 |
+| 更新内容が空など不正なリクエスト | 400 |
+| 名前の重複などの競合 | 409 |
+| 認証情報が無い/不正 | 401 |
+| Pydanticバリデーション失敗(FastAPI標準) | 422 |
 
 ---
 
 ## 9.2 APIレスポンス
 
+`HTTPException` を経由するエラーは、FastAPI標準の形式でそのまま返る。
+
 ```json
 {
-  "message": "Error message",
-  "code": "ERROR_CODE"
+  "detail": "Game not found."
 }
 ```
+
+422のバリデーションエラーはPydantic由来のため `detail` が配列になる(フィールドごとのエラー情報を含む)。この配列をフィールド単位でフロントエンドに反映する仕組みは未実装(issue QA-2で対応予定)。
+
+---
+
+## 9.3 未処理例外のフォールバック
+
+`HTTPException` で捕捉されなかった例外(Supabase/Postgrest起因の例外や想定外のバグなど)は、`backend/app/main.py` に登録したグローバル例外ハンドラーが捕捉し、スタックトレースをログに出力したうえで、他のエラーと同じ `{"detail": string}` 形式の500レスポンスに変換する。
+
+```python
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error: %s %s", request.method, request.url.path)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+```
+
+これにより、実装済みの `HTTPException` ベースのエラーと、想定外の例外のどちらも同じレスポンス形状(`{"detail": string}`)に統一される。エラーコード(例: `GAME_NOT_FOUND`)による分類や、リポジトリ層でのPostgrest例外の個別翻訳は現状スコープ外。
 
 ---
 

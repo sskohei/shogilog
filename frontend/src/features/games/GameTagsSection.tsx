@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { linkGameTagAction, unlinkGameTagAction } from "@/features/games/actions";
-import { initialSimpleActionState } from "@/features/games/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 import type { Tag } from "@/types/tag";
 
 function RemoveTagButton({ gameId, tagId }: { gameId: string; tagId: string }) {
@@ -14,6 +15,7 @@ function RemoveTagButton({ gameId, tagId }: { gameId: string; tagId: string }) {
     unlinkGameTagAction.bind(null, gameId, tagId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
 
   return (
     <form action={formAction} className="inline">
@@ -47,6 +49,7 @@ export function GameTagsSection({
     linkGameTagAction.bind(null, gameId),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
   const attachedIds = new Set(gameTags.map((tag) => tag.id));
   const availableTags = allTags.filter((tag) => !attachedIds.has(tag.id));
 

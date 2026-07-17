@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/fetcher";
 
-export function getProfileErrorMessage(error: ApiError): string {
+export function getApiErrorMessage(error: ApiError, fallback: string): string {
   if (error.kind === "config") {
     return error.message;
   }
@@ -13,5 +13,5 @@ export function getProfileErrorMessage(error: ApiError): string {
   if (error.status !== undefined && error.status >= 500) {
     return "バックエンドでエラーが発生しました。バックエンドが起動しているか確認してください。";
   }
-  return "プロフィール情報の取得に失敗しました。";
+  return fallback;
 }

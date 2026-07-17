@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { updatePlatformRatingAction } from "@/features/profile/actions";
-import { initialSimpleActionState } from "@/features/profile/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
+import { initialSimpleActionState } from "@/types/actionState";
 import {
   getPlatformName,
   getPlatformRatingMetric,
@@ -21,6 +22,7 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
     updatePlatformRatingAction.bind(null, rating.platform_id),
     initialSimpleActionState
   );
+  useActionErrorToast(state.error);
   const [hasPlayed, setHasPlayed] = useState(rating.has_played);
 
   const ratingMetric = getPlatformRatingMetric(rating.platform_id);

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 import { ApiError } from "@/lib/fetcher";
 import { fetchPlatformRatings, fetchProfile } from "@/services/api/profile";
-import { ErrorState } from "@/features/profile/ErrorState";
-import { getProfileErrorMessage } from "@/features/profile/errors";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import { PlatformRatingsSection } from "@/features/profile/PlatformRatingsSection";
 import { ProfileForm } from "@/features/profile/ProfileForm";
 import type { PlatformRating, Profile } from "@/types/profile";
@@ -26,7 +26,7 @@ async function loadProfilePageData(): Promise<ProfilePageData> {
   } catch (error) {
     const message =
       error instanceof ApiError
-        ? getProfileErrorMessage(error)
+        ? getApiErrorMessage(error, "プロフィール情報の取得に失敗しました。")
         : "プロフィール情報の取得に失敗しました。";
     return { ok: false, message };
   }

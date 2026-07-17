@@ -12,16 +12,15 @@ import {
   updateGame,
   updateGameMemo,
 } from "@/services/api/games";
-import type {
-  GameFormState,
-  SimpleActionState,
-} from "@/features/games/types";
+import type { GameFormState } from "@/features/games/types";
 import {
   toOptionalInt,
   toOptionalString,
   validateGameInput,
   type GameFormInput,
 } from "@/features/games/validation";
+import { getApiErrorMessage } from "@/lib/errorMessages";
+import type { SimpleActionState } from "@/types/actionState";
 import type { GameCreatePayload, GameResult, PlayerSide } from "@/types/game";
 
 export async function updateMemoAction(
@@ -35,8 +34,9 @@ export async function updateMemoAction(
     await updateGameMemo(gameId, typeof memo === "string" ? memo : "");
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "メモの保存に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "メモの保存に失敗しました。")
+        : "メモの保存に失敗しました。",
     };
   }
 
@@ -103,8 +103,9 @@ export async function createGameAction(
   } catch (error) {
     return {
       errors: {},
-      message:
-        error instanceof ApiError ? error.message : "対局の登録に失敗しました。",
+      message: error instanceof ApiError
+        ? getApiErrorMessage(error, "対局の登録に失敗しました。")
+        : "対局の登録に失敗しました。",
     };
   }
 
@@ -130,8 +131,9 @@ export async function updateGameAction(
   } catch (error) {
     return {
       errors: {},
-      message:
-        error instanceof ApiError ? error.message : "対局の更新に失敗しました。",
+      message: error instanceof ApiError
+        ? getApiErrorMessage(error, "対局の更新に失敗しました。")
+        : "対局の更新に失敗しました。",
     };
   }
 
@@ -148,8 +150,9 @@ export async function deleteGameAction(
     await deleteGame(gameId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "対局の削除に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "対局の削除に失敗しました。")
+        : "対局の削除に失敗しました。",
     };
   }
 
@@ -171,8 +174,9 @@ export async function linkGameTagAction(
     await linkGameTag(gameId, tagId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "タグの追加に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "タグの追加に失敗しました。")
+        : "タグの追加に失敗しました。",
     };
   }
 
@@ -190,8 +194,9 @@ export async function unlinkGameTagAction(
     await unlinkGameTag(gameId, tagId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "タグの解除に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "タグの解除に失敗しました。")
+        : "タグの解除に失敗しました。",
     };
   }
 

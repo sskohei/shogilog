@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 import { ApiError } from "@/lib/fetcher";
 import { fetchFavoriteOpeningIds, fetchOpenings } from "@/services/api/openings";
-import { ErrorState } from "@/features/openings/ErrorState";
-import { getOpeningsErrorMessage } from "@/features/openings/errors";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import { OpeningList } from "@/features/openings/OpeningList";
 import type { Opening } from "@/types/opening";
 
@@ -25,7 +25,7 @@ async function loadOpeningsPageData(): Promise<OpeningsPageData> {
   } catch (error) {
     const message =
       error instanceof ApiError
-        ? getOpeningsErrorMessage(error)
+        ? getApiErrorMessage(error, "戦法情報の取得に失敗しました。")
         : "戦法情報の取得に失敗しました。";
     return { ok: false, message };
   }

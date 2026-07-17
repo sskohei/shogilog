@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { ApiError } from "@/lib/fetcher";
 import { addFavoriteOpening, removeFavoriteOpening } from "@/services/api/openings";
-import type { SimpleActionState } from "@/features/openings/types";
+import { getApiErrorMessage } from "@/lib/errorMessages";
+import type { SimpleActionState } from "@/types/actionState";
 
 export async function addFavoriteOpeningAction(
   openingId: number,
@@ -15,8 +16,9 @@ export async function addFavoriteOpeningAction(
     await addFavoriteOpening(openingId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "お気に入りの登録に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "お気に入りの登録に失敗しました。")
+        : "お気に入りの登録に失敗しました。",
     };
   }
 
@@ -33,8 +35,9 @@ export async function removeFavoriteOpeningAction(
     await removeFavoriteOpening(openingId);
   } catch (error) {
     return {
-      error:
-        error instanceof ApiError ? error.message : "お気に入りの解除に失敗しました。",
+      error: error instanceof ApiError
+        ? getApiErrorMessage(error, "お気に入りの解除に失敗しました。")
+        : "お気に入りの解除に失敗しました。",
     };
   }
 

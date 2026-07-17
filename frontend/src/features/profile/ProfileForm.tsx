@@ -3,27 +3,21 @@
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateProfileAction } from "@/features/profile/actions";
 import { initialProfileFormState } from "@/features/profile/types";
+import { useActionErrorToast } from "@/lib/useActionErrorToast";
 import type { Profile } from "@/types/profile";
-
-function FieldError({ id, messages }: { id: string; messages?: string[] }) {
-  if (!messages) return null;
-  return (
-    <p id={id} className="text-sm text-destructive">
-      {messages[0]}
-    </p>
-  );
-}
 
 export function ProfileForm({ profile }: { profile: Profile }) {
   const [state, formAction, pending] = useActionState(
     updateProfileAction,
     initialProfileFormState
   );
+  useActionErrorToast(state.message);
 
   return (
     <form action={formAction} className="space-y-4">

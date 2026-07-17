@@ -186,8 +186,7 @@ JWTが無効または存在しない場合は401 Unauthorizedを返します。
 
 ```json
 {
-  "message": "Game not found.",
-  "code": "GAME_NOT_FOUND"
+  "detail": "Game not found."
 }
 ```
 
@@ -202,11 +201,12 @@ JWTが無効または存在しない場合は401 Unauthorizedを返します。
 |204|No Content|
 |400|Bad Request|
 |401|Unauthorized|
-|403|Forbidden|
 |404|Not Found|
 |409|Conflict|
 |422|Validation Error|
 |500|Internal Server Error|
+
+403 Forbidden(ロールベースの権限エラー)は現状のAPIには実装されていない(全リソースがuser_idスコープの所有者チェックのみ)。
 
 ---
 
@@ -934,25 +934,50 @@ GET /api/v1/games
 
 ## 18.1 共通エラー形式
 
+Service層で送出する `HTTPException` は、FastAPI標準の形式でそのまま返る。`detail` は常に文字列。
+
 ```json
 {
-  "message": "Something went wrong",
-  "code": "ERROR_CODE"
+  "detail": "Something went wrong"
 }
 ```
 
+未処理の例外(Supabase/Postgrest起因のエラーなど)は `backend/app/main.py` のグローバル例外ハンドラーが捕捉し、スタックトレースをログに出力したうえで、同じ形式の500として返す。
+
+```json
+{
+  "detail": "Internal server error"
+}
+```
+
+422のバリデーションエラー(Pydantic起因)のみ形状が異なり、`detail` はフィールドごとのエラー情報を持つ配列になる。
+
+```json
+{
+  "detail": [
+    { "loc": ["body", "rating_after"], "msg": "...", "type": "..." }
+  ]
+}
+```
+
+この配列をフィールド単位でフォームに反映する仕組みはissue QA-2(バリデーション強化)のスコープであり、現状のフロントエンドは422時に汎用的なフォールバックメッセージを表示する。
+
 ---
 
-## 18.2 代表的エラーコード
+## 18.2 代表的なエラーレスポンス例
 
-|Code|意味|
-|---|---|
-|GAME_NOT_FOUND|対局が存在しない|
-|TAG_NOT_FOUND|タグが存在しない|
-|OPENING_NOT_FOUND|戦法が存在しない|
-|UNAUTHORIZED|認証エラー|
-|FORBIDDEN|権限なし|
-|VALIDATION_ERROR|入力エラー|
+|状況|ステータス|`detail`の例|
+|---|---|---|
+|対局が存在しない|404|`"Game not found."`|
+|タグが存在しない|404|`"Tag not found."`|
+|戦法が存在しない|404|`"Opening not found."`|
+|プロフィール/プラットフォームが存在しない|404|`"Profile not found."` / `"Platform not found."`|
+|認証情報が無い/不正|401|`"Authentication credentials were not provided."` など|
+|タグ名の重複|409|`"Tag name already exists."`|
+|更新内容が空|400|`"No fields were provided for update."`|
+|想定外の例外|500|`"Internal server error"`|
+
+固定のエラーコード(例: `GAME_NOT_FOUND`)による分類は行っていない。エラーの種別はステータスコードと`detail`文字列で判別する。
 # 19. Search / Filter / Sort Design
 
 ## 19.1 基本方針

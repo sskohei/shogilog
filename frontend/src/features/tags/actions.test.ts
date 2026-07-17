@@ -69,7 +69,7 @@ describe("createTagAction", () => {
 
     const state = await createTagAction({ errors: {} }, makeFormData("研究"));
 
-    expect(state.message).toBe("タグ名が既に存在します");
+    expect(state.message).toBe("タグの作成に失敗しました。");
   });
 });
 
@@ -101,7 +101,7 @@ describe("updateTagAction", () => {
 
     const state = await updateTagAction("tag-1", { errors: {} }, makeFormData("終盤"));
 
-    expect(state.message).toBe("更新に失敗しました");
+    expect(state.message).toBe("タグの更新に失敗しました。");
   });
 });
 
@@ -126,6 +126,6 @@ describe("deleteTagAction", () => {
 
     const state = await deleteTagAction("tag-1", {}, new FormData());
 
-    expect(state.error).toBe("削除に失敗しました");
+    expect(state.error).toBe("タグの削除に失敗しました。");
   });
 });

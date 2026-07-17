@@ -8,9 +8,9 @@ import { fetchGame, fetchGameKifuUrl, fetchGameTags } from "@/services/api/games
 import { fetchOpenings } from "@/services/api/openings";
 import { fetchTags } from "@/services/api/tags";
 import { DeleteGameButton } from "@/features/games/DeleteGameButton";
-import { ErrorState } from "@/features/games/ErrorState";
-import { getGamesErrorMessage } from "@/features/games/errors";
 import { GameDetailHeader } from "@/features/games/GameDetailHeader";
+import { ErrorState } from "@/components/ui/error-state";
+import { getApiErrorMessage } from "@/lib/errorMessages";
 import { GameTagsSection } from "@/features/games/GameTagsSection";
 import { KifuSection } from "@/features/games/KifuSection";
 import { MemoSection } from "@/features/games/MemoSection";
@@ -48,7 +48,9 @@ async function loadGameDetailPageData(id: string): Promise<GameDetailPageData> {
       notFound();
     }
     const message =
-      error instanceof ApiError ? getGamesErrorMessage(error) : "対局情報の取得に失敗しました。";
+      error instanceof ApiError
+        ? getApiErrorMessage(error, "対局情報の取得に失敗しました。")
+        : "対局情報の取得に失敗しました。";
     return { ok: false, message };
   }
 }
