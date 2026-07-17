@@ -5,10 +5,36 @@ import { revalidatePath } from "next/cache";
 import { ApiError } from "@/lib/fetcher";
 import { createTag, deleteTag, updateTag } from "@/services/api/tags";
 import type { TagFormState } from "@/features/tags/types";
+import {
+  toOptionalColor,
+  validateTagInput,
+  type TagFormFieldErrors,
+} from "@/features/tags/validation";
+import { getApiErrorFieldNames } from "@/lib/apiFieldErrors";
 import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { SimpleActionState } from "@/types/actionState";
-import { toOptionalColor, validateTagInput } from "@/features/tags/validation";
 import type { TagCreatePayload } from "@/types/tag";
+
+const TAG_FIELD_ERROR_MESSAGES: Record<keyof TagFormFieldErrors, string> = {
+  name: "タグ名が長すぎます",
+  color: "色の形式が正しくありません",
+};
+
+function mapTagFieldErrors(error: ApiError): TagFormFieldErrors {
+  const fieldNames = getApiErrorFieldNames(error);
+  const errors: TagFormFieldErrors = {};
+
+  for (const [field, message] of Object.entries(TAG_FIELD_ERROR_MESSAGES) as [
+    keyof TagFormFieldErrors,
+    string,
+  ][]) {
+    if (fieldNames.has(field)) {
+      errors[field] = [message];
+    }
+  }
+
+  return errors;
+}
 
 export async function createTagAction(
   _prevState: TagFormState,
@@ -32,6 +58,12 @@ export async function createTagAction(
   try {
     await createTag(payload);
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      const fieldErrors = mapTagFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        return { errors: fieldErrors, message: "入力内容を確認してください。" };
+      }
+    }
     return {
       errors: {},
       message: error instanceof ApiError
@@ -67,6 +99,12 @@ export async function updateTagAction(
   try {
     await updateTag(tagId, payload);
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) {
+      const fieldErrors = mapTagFieldErrors(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        return { errors: fieldErrors, message: "入力内容を確認してください。" };
+      }
+    }
     return {
       errors: {},
       message: error instanceof ApiError

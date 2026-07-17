@@ -7,10 +7,11 @@ import {
 import type { GameResult, PlayerSide } from "@/types/game";
 
 const OPPONENT_NAME_MAX_LENGTH = 255;
+const MEMO_MAX_LENGTH = 2000;
 const RESULTS: GameResult[] = ["win", "lose", "draw"];
 const SIDES: PlayerSide[] = ["sente", "gote"];
 const PERCENTAGE_MIN = 0;
-const PERCENTAGE_MAX = 100;
+export const PERCENTAGE_MAX = 100;
 
 export type GameFormFieldErrors = {
   platform_id?: string[];
@@ -26,6 +27,7 @@ export type GameFormFieldErrors = {
   rank_before?: string[];
   rank_after?: string[];
   opponent_rank?: string[];
+  memo?: string[];
 };
 
 export type GameFormInput = {
@@ -42,6 +44,7 @@ export type GameFormInput = {
   rank_before: FormDataEntryValue | null;
   rank_after: FormDataEntryValue | null;
   opponent_rank: FormDataEntryValue | null;
+  memo: FormDataEntryValue | null;
 };
 
 export function toOptionalInt(value: FormDataEntryValue | null): number | null {
@@ -63,7 +66,7 @@ function isValidOptionalPositiveInt(value: FormDataEntryValue | null): boolean {
   return Number.isInteger(parsed) && parsed >= 1;
 }
 
-function isValidRatingValue(
+export function isValidRatingValue(
   value: FormDataEntryValue | null,
   metric: "rating" | "percentage" | "point"
 ): boolean {
@@ -77,7 +80,7 @@ function isValidRatingValue(
   return true;
 }
 
-function isValidRank(
+export function isValidRank(
   value: FormDataEntryValue | null,
   platformId: number
 ): boolean {
@@ -121,6 +124,11 @@ export function validateGameInput(input: GameFormInput): GameFormFieldErrors {
   const opponentName = toOptionalString(input.opponent_name) ?? "";
   if (opponentName.length > OPPONENT_NAME_MAX_LENGTH) {
     errors.opponent_name = ["対戦相手名が長すぎます"];
+  }
+
+  const memo = toOptionalString(input.memo) ?? "";
+  if (memo.length > MEMO_MAX_LENGTH) {
+    errors.memo = ["メモが長すぎます"];
   }
 
   if (!isValidPlatform) {

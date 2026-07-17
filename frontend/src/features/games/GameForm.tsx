@@ -338,7 +338,10 @@ export function GameForm({
           maxLength={2000}
           rows={4}
           defaultValue={game?.memo ?? undefined}
+          aria-invalid={state.errors.memo ? true : undefined}
+          aria-describedby={state.errors.memo ? "memo-error" : undefined}
         />
+        <FieldError id="memo-error" messages={state.errors.memo} />
       </div>
 
       {state.message && (

@@ -3,11 +3,12 @@
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { updatePlatformRatingAction } from "@/features/profile/actions";
+import { initialPlatformRatingActionState } from "@/features/profile/types";
 import { useActionErrorToast } from "@/lib/useActionErrorToast";
-import { initialSimpleActionState } from "@/types/actionState";
 import {
   getPlatformName,
   getPlatformRatingMetric,
@@ -20,9 +21,9 @@ import type { PlatformRating } from "@/types/profile";
 export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
   const [state, formAction, pending] = useActionState(
     updatePlatformRatingAction.bind(null, rating.platform_id),
-    initialSimpleActionState
+    initialPlatformRatingActionState
   );
-  useActionErrorToast(state.error);
+  useActionErrorToast(state.message);
   const [hasPlayed, setHasPlayed] = useState(rating.has_played);
 
   const ratingMetric = getPlatformRatingMetric(rating.platform_id);
@@ -71,6 +72,8 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
               id={`rank-${rating.platform_id}`}
               name="rank"
               defaultValue={rating.rank ?? ""}
+              aria-invalid={state.errors.rank ? true : undefined}
+              aria-describedby={state.errors.rank ? `rank-error-${rating.platform_id}` : undefined}
             >
               <option value="">未設定</option>
               {rankOptions.map((rank) => (
@@ -79,6 +82,7 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
                 </option>
               ))}
             </Select>
+            <FieldError id={`rank-error-${rating.platform_id}`} messages={state.errors.rank} />
           </div>
         ) : (
           <div className="space-y-1">
@@ -93,6 +97,14 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
               name="rating"
               type="number"
               defaultValue={rating.rating ?? undefined}
+              aria-invalid={state.errors.rating ? true : undefined}
+              aria-describedby={
+                state.errors.rating ? `rating-error-${rating.platform_id}` : undefined
+              }
+            />
+            <FieldError
+              id={`rating-error-${rating.platform_id}`}
+              messages={state.errors.rating}
             />
           </div>
         )
@@ -104,11 +116,6 @@ export function PlatformRatingRow({ rating }: { rating: PlatformRating }) {
         <Button type="submit" size="sm" disabled={pending}>
           保存
         </Button>
-        {state.error && (
-          <p className="text-xs text-destructive" aria-live="polite">
-            {state.error}
-          </p>
-        )}
       </div>
     </form>
   );

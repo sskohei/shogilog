@@ -398,7 +398,7 @@ Next.js App Routerを使用します。
 }
 ```
 
-422のバリデーションエラーのみ `detail` が配列になる。フィールド単位でフォームへ反映する仕組みは未実装(issue QA-2で対応予定)。
+422のバリデーションエラーのみ `detail` が配列になる(フィールドごとの `{loc, msg, type}`)。`apiFetch` はこれを `ApiError.fieldErrors` として保持する。`frontend/src/lib/apiFieldErrors.ts` の `getApiErrorFieldNames(error)` が `loc` の末尾要素からフィールド名の集合を取り出し、各featureの `actions.ts`(`games`/`tags`/`profile`)がそのフィールド名をfeature固有の `FieldErrors` 型にマッピングして `state.errors` に反映する。バックエンドの生の `msg` はUIに表示せず、常にfeature側で定義した日本語メッセージを使う。フィールドが特定できない場合は通常のフォールバックメッセージ(後述)にとどまる。
 
 エラーメッセージの日本語化は `frontend/src/lib/errorMessages.ts` の `getApiErrorMessage(error, fallback)` に集約する。config/network/401/5xxは共通の文言、それ以外(400/404/409/422など)はfeatureごとのfallback文言を返す。ページ読み込み(Server Component)とServer Action(mutation)のどちらのエラー処理も同じ関数を使い、バックエンドの生の `detail` 文字列がそのままUIに表示されないようにする。
 
@@ -427,9 +427,13 @@ Next.js App Routerを使用します。
 
 ## 14.2 バリデーション
 
+各featureの `validation.ts`(`games`/`tags`/`profile`/`auth`)が Server Action 内で送信前に検証する(`createGameAction` 等)。検証に失敗した場合はAPI呼び出し自体を行わず、`FieldErrors` を返して該当フィールドに `@/components/ui/field-error` の `FieldError` を表示する。
+
 - 必須チェック
-- 文字数制限
-- 型チェック
+- 文字数制限(タグ名255文字、表示名30文字、自己紹介500文字、メモ2000文字 など)
+- 型チェック(整数・日付・Enum値・カラーコード `^#[0-9a-fA-F]{6}$`)
+- プラットフォーム別のレーティング/段位チェック(`frontend/src/features/games/platforms.ts` の `getPlatformRatingMetric`/`getRankOptions` を用いる。将棋ウォーズ=0〜100の整数、棋桜/将棋クエスト/81道場=範囲チェック無し、段位はプラットフォームごとのラダー内のみ許可)。`games/validation.ts` の `isValidRatingValue`/`isValidRank` を `profile/validation.ts` の `validatePlatformRatingInput`(プロフィール画面のレーティング編集)からも再利用している。
+- バックエンド(Pydantic)側でも同等のルールを検証しており(`docs/api.md` §11.1)、クライアント側の検証をすり抜けた場合は422/400のフィールドエラーとして返る(§13.1参照)。
 
 ---
 

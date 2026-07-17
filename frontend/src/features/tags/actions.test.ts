@@ -71,6 +71,22 @@ describe("createTagAction", () => {
 
     expect(state.message).toBe("タグの作成に失敗しました。");
   });
+
+  it("422でフィールドエラーが返された場合は該当フィールドにエラーを反映する", async () => {
+    createTagMock.mockRejectedValue(
+      new ApiError("http", "リクエストに失敗しました (status: 422)", 422, [
+        { loc: ["body", "color"], msg: "...", type: "value_error" },
+      ])
+    );
+
+    const state = await createTagAction(
+      { errors: {} },
+      makeFormData("研究", "#ff0000")
+    );
+
+    expect(state.errors.color).toBeDefined();
+    expect(state.message).toBe("入力内容を確認してください。");
+  });
 });
 
 describe("updateTagAction", () => {

@@ -2,8 +2,9 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from app.core.platforms import is_valid_rank, is_valid_rating_value
 from app.schemas.common import Pagination
 
 
@@ -32,12 +33,22 @@ class GameBase(BaseModel):
     rank_before: str | None = Field(default=None, max_length=32)
     rank_after: str | None = Field(default=None, max_length=32)
     opponent_rank: str | None = Field(default=None, max_length=32)
-    memo: str | None = None
+    memo: str | None = Field(default=None, max_length=2000)
     kifu_path: str | None = Field(default=None, max_length=1024)
 
 
 class GameCreate(GameBase):
-    pass
+    @model_validator(mode="after")
+    def _validate_rating_and_rank(self) -> "GameCreate":
+        for value in (self.rating_before, self.rating_after, self.opponent_rating):
+            if value is not None and not is_valid_rating_value(self.platform_id, value):
+                raise ValueError("Rating value is out of range for this platform.")
+
+        for rank in (self.rank_before, self.rank_after, self.opponent_rank):
+            if not is_valid_rank(self.platform_id, rank):
+                raise ValueError("Rank value is not valid for this platform.")
+
+        return self
 
 
 class GameUpdate(BaseModel):
@@ -54,7 +65,7 @@ class GameUpdate(BaseModel):
     rank_before: str | None = Field(default=None, max_length=32)
     rank_after: str | None = Field(default=None, max_length=32)
     opponent_rank: str | None = Field(default=None, max_length=32)
-    memo: str | None = None
+    memo: str | None = Field(default=None, max_length=2000)
     kifu_path: str | None = Field(default=None, max_length=1024)
 
 

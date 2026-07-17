@@ -1,7 +1,9 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from app.core.platforms import is_valid_rank, is_valid_rating_value
 
 
 class RatingBase(BaseModel):
@@ -12,7 +14,15 @@ class RatingBase(BaseModel):
 
 
 class RatingCreate(RatingBase):
-    pass
+    @model_validator(mode="after")
+    def _validate_rating_and_rank(self) -> "RatingCreate":
+        if not is_valid_rating_value(self.platform_id, self.rating):
+            raise ValueError("Rating value is out of range for this platform.")
+
+        if not is_valid_rank(self.platform_id, self.rank):
+            raise ValueError("Rank value is not valid for this platform.")
+
+        return self
 
 
 class RatingRead(RatingBase):

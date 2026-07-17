@@ -66,6 +66,31 @@ describe("apiFetch", () => {
     } satisfies Partial<ApiError>);
   });
 
+  it("422でdetailが配列の場合はfieldErrorsを保持しつつ汎用メッセージを投げる", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: [
+              { loc: ["body", "rating_after"], msg: "Rating value is out of range.", type: "value_error" },
+            ],
+          }),
+          { status: 422 }
+        )
+      )
+    );
+
+    await expect(apiFetch("/games")).rejects.toMatchObject({
+      kind: "http",
+      status: 422,
+      message: "リクエストに失敗しました (status: 422)",
+      fieldErrors: [
+        { loc: ["body", "rating_after"], msg: "Rating value is out of range.", type: "value_error" },
+      ],
+    } satisfies Partial<ApiError>);
+  });
+
   it("成功時はレスポンスのJSONを返す", async () => {
     vi.stubGlobal(
       "fetch",

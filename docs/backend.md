@@ -253,7 +253,7 @@ if game is None:
 }
 ```
 
-422のバリデーションエラーはPydantic由来のため `detail` が配列になる(フィールドごとのエラー情報を含む)。この配列をフィールド単位でフロントエンドに反映する仕組みは未実装(issue QA-2で対応予定)。
+422のバリデーションエラーはPydantic由来のため `detail` が配列になる(フィールドごとのエラー情報を含む)。この配列は `frontend/src/lib/fetcher.ts` の `apiFetch` が `ApiError.fieldErrors` としてパースし、`frontend/src/lib/apiFieldErrors.ts` の `getApiErrorFieldNames` で対象フィールド名を抽出したうえで、各featureの `actions.ts` がフォームの `FieldError` に反映する(issue QA-2で対応済み)。
 
 ---
 
