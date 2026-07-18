@@ -1,20 +1,25 @@
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from app.repositories.games import GameRepository
 from app.repositories.openings import OpeningRepository
 from app.repositories.ratings import RatingRepository
 from app.schemas.dashboard import (
+    DailyStat,
     DashboardData,
     MonthlyStat,
     OpeningStat,
     PlatformStat,
     RatingHistoryPoint,
     SideStat,
+    WeeklyStat,
+    YearlyStat,
 )
 from app.schemas.game import GameListFilters
 
 RECENT_GAMES_LIMIT = 5
 RATING_HISTORY_LIMIT_PER_PLATFORM = 100
+DAILY_STATS_WINDOW_DAYS = 30
 
 
 def _win_rate(wins: int, losses: int) -> float:
@@ -41,7 +46,8 @@ class DashboardService:
         self.opening_repository = opening_repository or OpeningRepository()
         self.rating_repository = rating_repository or RatingRepository()
 
-    def get_dashboard(self, user_id: UUID) -> DashboardData:
+    def get_dashboard(self, user_id: UUID, now: datetime | None = None) -> DashboardData:
+        now = now or datetime.now(timezone.utc)
         rows = self.game_repository.list_stats_by_user(user_id)
         recent_games, _ = self.game_repository.list_by_user(
             user_id,
@@ -63,7 +69,10 @@ class DashboardService:
             platform_stats=self._aggregate_platform_stats(rows),
             opening_stats=self._aggregate_opening_stats(rows),
             side_stats=self._aggregate_side_stats(rows),
+            daily_stats=self._aggregate_daily_stats(rows, now),
+            weekly_stats=self._aggregate_weekly_stats(rows),
             monthly_stats=self._aggregate_monthly_stats(rows),
+            yearly_stats=self._aggregate_yearly_stats(rows),
             rating_history=self._aggregate_rating_history(
                 self.rating_repository.list_by_user(user_id)
             ),
@@ -145,6 +154,41 @@ class DashboardService:
             if side in grouped
         ]
 
+    def _aggregate_daily_stats(self, rows: list[dict], now: datetime) -> list[DailyStat]:
+        end_date = now.date()
+        start_date = end_date - timedelta(days=DAILY_STATS_WINDOW_DAYS - 1)
+
+        counts: dict[str, int] = {
+            (start_date + timedelta(days=offset)).isoformat(): 0
+            for offset in range(DAILY_STATS_WINDOW_DAYS)
+        }
+
+        for row in rows:
+            played_date = datetime.fromisoformat(row["played_at"]).date()
+
+            if start_date <= played_date <= end_date:
+                date_key = played_date.isoformat()
+                counts[date_key] += 1
+
+        return [
+            DailyStat(date=date, game_count=counts[date])
+            for date in sorted(counts)
+        ]
+
+    def _aggregate_weekly_stats(self, rows: list[dict]) -> list[WeeklyStat]:
+        counts: dict[str, int] = {}
+
+        for row in rows:
+            played_date = datetime.fromisoformat(row["played_at"]).date()
+            week_start = played_date - timedelta(days=played_date.weekday())
+            week = week_start.isoformat()
+            counts[week] = counts.get(week, 0) + 1
+
+        return [
+            WeeklyStat(week=week, game_count=counts[week])
+            for week in sorted(counts)
+        ]
+
     def _aggregate_monthly_stats(self, rows: list[dict]) -> list[MonthlyStat]:
         counts: dict[str, int] = {}
 
@@ -155,6 +199,18 @@ class DashboardService:
         return [
             MonthlyStat(month=month, game_count=counts[month])
             for month in sorted(counts)
+        ]
+
+    def _aggregate_yearly_stats(self, rows: list[dict]) -> list[YearlyStat]:
+        counts: dict[str, int] = {}
+
+        for row in rows:
+            year = row["played_at"][:4]
+            counts[year] = counts.get(year, 0) + 1
+
+        return [
+            YearlyStat(year=year, game_count=counts[year])
+            for year in sorted(counts)
         ]
 
     def _aggregate_rating_history(self, rows: list[dict]) -> list[RatingHistoryPoint]:
