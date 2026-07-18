@@ -976,20 +976,22 @@ HTTPステータスはREST APIの標準に従います。
 
 ログは用途ごとに分類します。
 
-|種類|内容|
-|----|----|
-|Access Log|HTTPアクセス|
-|Application Log|業務ログ|
-|Error Log|例外|
-|Security Log|認証・認可|
+|種類|内容|状態|
+|----|----|----|
+|Access Log|HTTPアクセス|実装済み(`backend/app/core/logging.py`, `main.py` の `access_log_middleware`)|
+|Error Log|例外|実装済み(`main.py` の `unhandled_exception_handler`)|
+|Application Log|業務ログ|各層で `logging.getLogger(__name__)` を使う想定。網羅的な呼び出し追加は未実装|
+|Security Log|認証・認可|未実装。401/403もAccess Logの `status_code` に含まれる|
 
-ログには以下を含めます。
+Access Log / Error Log はJSON構造化ログとして標準出力に出力し、以下を含めます。
 
-- Request ID
-- User ID
+- Request ID(`X-Request-ID` としてレスポンスヘッダーにも付与)
+- User ID(未認証時は `null`)
 - Request Path
 - HTTP Method
-- Response Time
+- Response Time(ミリ秒)
+
+詳細な実装は `docs/backend.md` §10 を参照してください。
 
 ---
 
