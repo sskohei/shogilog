@@ -934,6 +934,22 @@ GET /api/v1/games
         "win_rate": 0.5
       }
     ],
+    "daily_stats": [
+      {
+        "date": "2026-06-08",
+        "game_count": 0
+      },
+      {
+        "date": "2026-07-07",
+        "game_count": 3
+      }
+    ],
+    "weekly_stats": [
+      {
+        "week": "2026-06-29",
+        "game_count": 5
+      }
+    ],
     "monthly_stats": [
       {
         "month": "2026-06",
@@ -943,10 +959,20 @@ GET /api/v1/games
         "month": "2026-07",
         "game_count": 18
       }
+    ],
+    "yearly_stats": [
+      {
+        "year": "2026",
+        "game_count": 30
+      }
     ]
   }
 }
 ```
+
+`daily_stats` は直近30日分を返す(対局が無い日も `game_count: 0` で埋めて必ず30件返す)。
+`weekly_stats`(月曜始まりの週)・`monthly_stats`・`yearly_stats` は対局がある期間のみを返し、
+件数の上限は無い。
 
 ---
 

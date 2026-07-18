@@ -5,7 +5,7 @@ import { fetchDashboard } from "@/services/api/dashboard";
 import { fetchOpenings } from "@/services/api/openings";
 import { getApiErrorMessage } from "@/lib/errorMessages";
 import { ErrorState } from "@/components/ui/error-state";
-import { MonthlyGamesChart } from "@/features/dashboard/MonthlyGamesChart";
+import { GamesCountChart } from "@/features/dashboard/GamesCountChart";
 import { RatingHistoryChart } from "@/features/dashboard/RatingHistoryChart";
 import { RecentGamesSection } from "@/features/dashboard/RecentGamesSection";
 import { SummaryCards } from "@/features/dashboard/SummaryCards";
@@ -80,7 +80,12 @@ export default async function DashboardPage() {
               }))}
             />
           </div>
-          <MonthlyGamesChart data={data.dashboard.monthly_stats} />
+          <GamesCountChart
+            daily={data.dashboard.daily_stats}
+            weekly={data.dashboard.weekly_stats}
+            monthly={data.dashboard.monthly_stats}
+            yearly={data.dashboard.yearly_stats}
+          />
           <RatingHistoryChart data={data.dashboard.rating_history} />
           <RecentGamesSection
             games={data.dashboard.recent_games}

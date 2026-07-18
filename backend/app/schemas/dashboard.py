@@ -21,8 +21,23 @@ class SideStat(BaseModel):
     win_rate: float = Field(..., ge=0, le=1)
 
 
+class DailyStat(BaseModel):
+    date: str
+    game_count: int = Field(..., ge=0)
+
+
+class WeeklyStat(BaseModel):
+    week: str
+    game_count: int = Field(..., ge=0)
+
+
 class MonthlyStat(BaseModel):
     month: str
+    game_count: int = Field(..., ge=0)
+
+
+class YearlyStat(BaseModel):
+    year: str
     game_count: int = Field(..., ge=0)
 
 
@@ -40,7 +55,10 @@ class DashboardData(BaseModel):
     platform_stats: list[PlatformStat]
     opening_stats: list[OpeningStat]
     side_stats: list[SideStat]
+    daily_stats: list[DailyStat]
+    weekly_stats: list[WeeklyStat]
     monthly_stats: list[MonthlyStat]
+    yearly_stats: list[YearlyStat]
     rating_history: list[RatingHistoryPoint]
 
 

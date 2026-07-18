@@ -15,8 +15,23 @@ export type SideStat = {
   win_rate: number;
 };
 
+export type DailyStat = {
+  date: string;
+  game_count: number;
+};
+
+export type WeeklyStat = {
+  week: string;
+  game_count: number;
+};
+
 export type MonthlyStat = {
   month: string;
+  game_count: number;
+};
+
+export type YearlyStat = {
+  year: string;
   game_count: number;
 };
 
@@ -34,7 +49,10 @@ export type DashboardData = {
   platform_stats: PlatformStat[];
   opening_stats: OpeningStat[];
   side_stats: SideStat[];
+  daily_stats: DailyStat[];
+  weekly_stats: WeeklyStat[];
   monthly_stats: MonthlyStat[];
+  yearly_stats: YearlyStat[];
   rating_history: RatingHistoryPoint[];
 };
 

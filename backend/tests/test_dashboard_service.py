@@ -175,6 +175,61 @@ def test_get_dashboard_groups_monthly_stats():
     assert [m.month for m in data.monthly_stats] == ["2026-06", "2026-07"]
 
 
+def test_get_dashboard_groups_yearly_stats():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    yearly = {y.year: y.game_count for y in data.yearly_stats}
+    assert yearly == {"2026": 4}
+
+
+def test_get_dashboard_groups_weekly_stats():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    weekly = {w.week: w.game_count for w in data.weekly_stats}
+    # 2026-06-10 (Wed) -> week of 2026-06-08
+    # 2026-07-05 (Sun) -> week of 2026-06-29
+    # 2026-07-06 (Mon) / 2026-07-07 (Tue) -> week of 2026-07-06
+    assert weekly == {"2026-06-08": 1, "2026-06-29": 1, "2026-07-06": 2}
+    assert [w.week for w in data.weekly_stats] == ["2026-06-08", "2026-06-29", "2026-07-06"]
+
+
+def test_get_dashboard_groups_daily_stats_within_last_30_days():
+    game_repository = FakeGameRepository()
+    game_repository.rows.append(
+        {
+            "result": "win",
+            "platform_id": 1,
+            "my_opening_id": 6,
+            "side": "sente",
+            "played_at": "2025-01-01T10:00:00+00:00",
+        }
+    )
+    service = make_service(game_repository)
+    now = datetime(2026, 7, 7, tzinfo=UTC)
+
+    data = service.get_dashboard(game_repository.user_id, now=now)
+
+    assert len(data.daily_stats) == 30
+    assert data.daily_stats[0].date == "2026-06-08"
+    assert data.daily_stats[-1].date == "2026-07-07"
+
+    daily = {d.date: d.game_count for d in data.daily_stats}
+    assert daily["2026-06-10"] == 1
+    assert daily["2026-07-05"] == 1
+    assert daily["2026-07-06"] == 1
+    assert daily["2026-07-07"] == 1
+    # 2025-01-01 falls outside the 30-day window and should not be counted.
+    assert sum(daily.values()) == 4
+    # Days without games are zero-filled rather than omitted.
+    assert daily["2026-06-09"] == 0
+
+
 def test_get_dashboard_includes_recent_games():
     game_repository = FakeGameRepository()
     service = make_service(game_repository)
@@ -199,7 +254,11 @@ def test_get_dashboard_handles_no_games():
     assert data.platform_stats == []
     assert data.opening_stats == []
     assert data.side_stats == []
+    assert data.weekly_stats == []
     assert data.monthly_stats == []
+    assert data.yearly_stats == []
+    assert len(data.daily_stats) == 30
+    assert all(d.game_count == 0 for d in data.daily_stats)
     assert data.recent_games == []
     assert data.rating_history == []
 
