@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 import pydantic
 import pytest
 from fastapi import HTTPException
+from storage3.exceptions import StorageApiError
 
 from app.schemas.game import (
     GameCreate,
@@ -42,6 +43,9 @@ class FakeGameRepository:
         }
         self.updated_payload: dict | None = None
         self.signed_url = "https://example.supabase.co/storage/v1/object/sign/kifu/test.kif"
+        self.uploaded_kifu: tuple[str, str] | None = None
+        self.raise_on_upload = False
+        self.signed_url_download: str | bool | None = None
 
     def list_by_user(self, user_id: UUID, filters: GameListFilters):
         return [self.game], 1
@@ -65,8 +69,17 @@ class FakeGameRepository:
     def delete(self, user_id: UUID, game_id: UUID):
         return game_id == self.game_id
 
-    def create_signed_kifu_url(self, path: str, expires_in: int = 300):
+    def create_signed_kifu_url(
+        self, path: str, expires_in: int = 300, download: str | bool = True
+    ):
+        self.signed_url_download = download
         return self.signed_url
+
+    def upload_kifu_text(self, path: str, content: str) -> None:
+        if self.raise_on_upload:
+            raise StorageApiError("upload failed", "upload_failed", 500)
+
+        self.uploaded_kifu = (path, content)
 
 
 class FakeRatingRepository:
@@ -286,6 +299,7 @@ def test_get_kifu_url_returns_signed_url_when_kifu_path_set():
     url = service.get_kifu_url(repository.user_id, repository.game_id)
 
     assert url == repository.signed_url
+    assert repository.signed_url_download == "kifu_2026-07-05.kif"
 
 
 def test_get_kifu_url_raises_404_for_missing_game():
@@ -469,3 +483,25 @@ def test_update_game_rejects_kifu_path_outside_own_scope():
         )
 
     assert exc.value.status_code == 400
+
+
+def test_upload_kifu_stores_content_under_user_scoped_path():
+    repository = FakeGameRepository()
+    service = make_service(repository)
+
+    path = service.upload_kifu(repository.user_id, "開始日時：2026/07/05 10:00:00")
+
+    assert path.startswith(f"{repository.user_id}/")
+    assert path.endswith(".kif")
+    assert repository.uploaded_kifu == (path, "開始日時：2026/07/05 10:00:00")
+
+
+def test_upload_kifu_raises_502_on_storage_failure():
+    repository = FakeGameRepository()
+    repository.raise_on_upload = True
+    service = make_service(repository)
+
+    with pytest.raises(HTTPException) as exc:
+        service.upload_kifu(repository.user_id, "test")
+
+    assert exc.value.status_code == 502

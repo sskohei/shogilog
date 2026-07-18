@@ -17,6 +17,9 @@ from app.schemas.game import (
     GameListResponse,
     GameResult,
     GameUpdate,
+    KifuPath,
+    KifuUploadRequest,
+    KifuUploadResponse,
     PlayerSide,
 )
 from app.schemas.tag import GameTagLinkRequest, TagListResponse
@@ -81,6 +84,21 @@ async def create_game(
     game = service.create_game(current_user.id, payload)
 
     return GameIdResponse(data=GameId(id=game["id"]))
+
+
+@router.post(
+    "/kifu",
+    response_model=KifuUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_kifu(
+    payload: KifuUploadRequest,
+    current_user: AuthUser = Depends(get_current_user),
+    service: GameService = Depends(get_game_service),
+) -> KifuUploadResponse:
+    path = service.upload_kifu(current_user.id, payload.content)
+
+    return KifuUploadResponse(data=KifuPath(kifu_path=path))
 
 
 @router.get("/{game_id}", response_model=GameDataResponse)

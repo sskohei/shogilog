@@ -88,10 +88,19 @@ class GameRepository(SupabaseRepository):
 
         return response.data[0]
 
-    def create_signed_kifu_url(self, path: str, expires_in: int = 300) -> str | None:
+    def upload_kifu_text(self, path: str, content: str) -> None:
+        self.client.storage.from_(KIFU_BUCKET).upload(
+            path,
+            content.encode("utf-8"),
+            {"content-type": "text/plain; charset=utf-8"},
+        )
+
+    def create_signed_kifu_url(
+        self, path: str, expires_in: int = 300, download: str | bool = True
+    ) -> str | None:
         try:
             result = self.client.storage.from_(KIFU_BUCKET).create_signed_url(
-                path, expires_in
+                path, expires_in, {"download": download}
             )
         except StorageApiError:
             return None

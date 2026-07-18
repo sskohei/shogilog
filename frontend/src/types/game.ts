@@ -46,6 +46,12 @@ export type GameKifuUrlResponse = {
   };
 };
 
+export type KifuUploadResponse = {
+  data: {
+    kifu_path: string;
+  };
+};
+
 export type GameIdResponse = {
   data: {
     id: string;
@@ -67,6 +73,7 @@ export type GameCreatePayload = {
   rank_after?: string | null;
   opponent_rank?: string | null;
   memo?: string | null;
+  kifu_path?: string | null;
 };
 
 // backend/app/schemas/game.py の GameListFilters をミラー。

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createGameAction, updateGameAction } from "@/features/games/actions";
+import { parseKif, type KifParseResult } from "@/features/games/kifParser";
 import {
   PLATFORM_OPTIONS,
   getPlatformRatingMetric,
@@ -17,8 +18,9 @@ import {
   usesRankRating,
 } from "@/features/games/platforms";
 import { initialGameFormState } from "@/features/games/types";
+import { showErrorToast } from "@/lib/toast";
 import { useActionErrorToast } from "@/lib/useActionErrorToast";
-import type { Game } from "@/types/game";
+import type { Game, GameResult, PlayerSide } from "@/types/game";
 import type { Opening } from "@/types/opening";
 
 function toDatetimeLocalValue(iso: string): string {
@@ -50,6 +52,62 @@ export function GameForm({
   const [platformId, setPlatformId] = useState(
     game ? String(game.platform_id) : ""
   );
+  const [playedAt, setPlayedAt] = useState(
+    game ? toDatetimeLocalValue(game.played_at) : ""
+  );
+  const [side, setSide] = useState<PlayerSide | "">(game?.side ?? "");
+  const [opponentName, setOpponentName] = useState(game?.opponent_name ?? "");
+  const [result, setResult] = useState<GameResult | "">(game?.result ?? "");
+  const [kifuText, setKifuText] = useState("");
+
+  const parsedKif = useMemo(() => parseKif(kifuText), [kifuText]);
+
+  function applyOpponentAndResultFromKif(
+    forSide: PlayerSide | "",
+    kif: KifParseResult
+  ) {
+    if (forSide !== "sente" && forSide !== "gote") return;
+
+    const opponentFromKif = forSide === "sente" ? kif.goteName : kif.senteName;
+    if (opponentFromKif) {
+      setOpponentName(opponentFromKif);
+    }
+
+    if (kif.outcome) {
+      setResult(
+        kif.outcome === "draw"
+          ? "draw"
+          : kif.outcome === `${forSide}_win`
+            ? "win"
+            : "lose"
+      );
+    }
+  }
+
+  function applyParsedKif(text: string) {
+    const kif = parseKif(text);
+    if (kif.playedAt) {
+      setPlayedAt(kif.playedAt);
+    }
+    applyOpponentAndResultFromKif(side, kif);
+  }
+
+  function handleSideChange(newSide: PlayerSide | "") {
+    setSide(newSide);
+    applyOpponentAndResultFromKif(newSide, parsedKif);
+  }
+
+  async function handlePasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      setKifuText(text);
+      applyParsedKif(text);
+    } catch {
+      showErrorToast(
+        "クリップボードから読み取れませんでした。手動で貼り付けてください。"
+      );
+    }
+  }
 
   const numericPlatformId = platformId ? Number(platformId) : null;
   const ratingMetric =
@@ -62,6 +120,42 @@ export function GameForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="kifu_text">棋譜(KIF形式)</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handlePasteFromClipboard}
+          >
+            クリップボードから貼り付け
+          </Button>
+        </div>
+        <Textarea
+          id="kifu_text"
+          name="kifu_text"
+          rows={8}
+          value={kifuText}
+          onChange={(event) => {
+            const text = event.target.value;
+            setKifuText(text);
+            applyParsedKif(text);
+          }}
+          placeholder="KIF形式の棋譜をここに貼り付けてください"
+          aria-invalid={state.errors.kifu_text ? true : undefined}
+          aria-describedby={
+            state.errors.kifu_text ? "kifu_text-error" : undefined
+          }
+        />
+        <FieldError id="kifu_text-error" messages={state.errors.kifu_text} />
+        {mode === "edit" && game?.kifu_path && (
+          <p className="text-xs text-muted-foreground">
+            貼り付けると、登録済みの棋譜が上書きされます。
+          </p>
+        )}
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="platform_id">対局サービス</Label>
         <Select
@@ -92,7 +186,8 @@ export function GameForm({
           id="played_at"
           name="played_at"
           type="datetime-local"
-          defaultValue={game ? toDatetimeLocalValue(game.played_at) : undefined}
+          value={playedAt}
+          onChange={(event) => setPlayedAt(event.target.value)}
           aria-invalid={state.errors.played_at ? true : undefined}
           aria-describedby={state.errors.played_at ? "played_at-error" : undefined}
         />
@@ -105,7 +200,10 @@ export function GameForm({
           <Select
             id="result"
             name="result"
-            defaultValue={game?.result ?? ""}
+            value={result}
+            onChange={(event) =>
+              setResult(event.target.value as GameResult | "")
+            }
             aria-invalid={state.errors.result ? true : undefined}
             aria-describedby={state.errors.result ? "result-error" : undefined}
           >
@@ -124,7 +222,10 @@ export function GameForm({
           <Select
             id="side"
             name="side"
-            defaultValue={game?.side ?? ""}
+            value={side}
+            onChange={(event) =>
+              handleSideChange(event.target.value as PlayerSide | "")
+            }
             aria-invalid={state.errors.side ? true : undefined}
             aria-describedby={state.errors.side ? "side-error" : undefined}
           >
@@ -196,7 +297,8 @@ export function GameForm({
           id="opponent_name"
           name="opponent_name"
           maxLength={255}
-          defaultValue={game?.opponent_name ?? undefined}
+          value={opponentName ?? ""}
+          onChange={(event) => setOpponentName(event.target.value)}
         />
         <FieldError
           id="opponent_name-error"

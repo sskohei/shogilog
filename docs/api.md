@@ -633,6 +633,8 @@ GET /api/v1/games
 
 対局に紐づく棋譜ファイル(Supabase Storage の `kifu` バケットに保存)への署名付きURLを発行します。`kifu_path` が未設定の場合は `url` に `null` を返します。有効期限は300秒です。
 
+URLには `download` クエリが付与され、Storageサーバーが `Content-Disposition: attachment` を返すようになっている。これによりブラウザでリンクを開いてもページ遷移・インライン表示(文字化けの原因になる)せず、ファイルとして直接ダウンロードされる。ダウンロード時のファイル名は対局日から `kifu_YYYY-MM-DD.kif` の形式で組み立てられる。
+
 ---
 
 ### Response
@@ -640,10 +642,54 @@ GET /api/v1/games
 ```json
 {
   "data": {
-    "url": "https://.../storage/v1/object/sign/kifu/user-id/game-id.kif?token=..."
+    "url": "https://.../storage/v1/object/sign/kifu/user-id/game-id.kif?token=...&download=kifu_2026-07-05.kif"
   }
 }
 ```
+
+---
+
+## 12.7 POST /games/kifu
+
+### 概要
+
+KIF形式の棋譜テキストをアップロードし、Supabase Storageの`kifu`バケットへ保存する。レスポンスの`kifu_path`を`POST /games`または`PUT /games/{id}`の`kifu_path`にそのまま渡すことで、対局に棋譜を紐付ける(このエンドポイント単体では`games`テーブルは更新されない)。
+
+---
+
+### Request
+
+```
+POST /api/v1/games/kifu
+```
+
+```json
+{
+  "content": "開始日時：2026/07/05 21:00:00\n先手：Alice\n後手：Bob\n..."
+}
+```
+
+`content`は1〜200,000文字。
+
+---
+
+### Response
+
+```json
+{
+  "data": {
+    "kifu_path": "user-id/1b6e9f2e-....kif"
+  }
+}
+```
+
+`kifu_path`は常に`{user_id}/{uuid}.kif`の形式で、認証済みユーザー自身のスコープに保存される。
+
+---
+
+### エラー
+
+Storageへの書き込みに失敗した場合は502 Bad Gatewayを返す。
 
 ---
 
@@ -1295,6 +1341,8 @@ user_idはサーバー側で付与する
 - GET /games/{id}
 - PUT /games/{id}
 - DELETE /games/{id}
+- GET /games/{id}/kifu-url
+- POST /games/kifu
 
 ---
 

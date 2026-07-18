@@ -1,7 +1,8 @@
 from math import ceil
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
+from storage3.exceptions import StorageApiError
 
 from app.core.platforms import is_valid_rank, is_valid_rating_value
 from app.repositories.games import GameRepository
@@ -66,7 +67,22 @@ class GameService:
         if not kifu_path:
             return None
 
-        return self.repository.create_signed_kifu_url(kifu_path)
+        played_at = str(game.get("played_at") or "")[:10]
+        filename: str | bool = f"kifu_{played_at}.kif" if played_at else True
+
+        return self.repository.create_signed_kifu_url(kifu_path, download=filename)
+
+    def upload_kifu(self, user_id: UUID, content: str) -> str:
+        path = f"{user_id}/{uuid4()}.kif"
+        try:
+            self.repository.upload_kifu_text(path, content)
+        except StorageApiError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Failed to upload kifu.",
+            ) from exc
+
+        return path
 
     def _validate_kifu_path(self, user_id: UUID, kifu_path: str | None) -> None:
         if kifu_path is not None and not kifu_path.startswith(f"{user_id}/"):

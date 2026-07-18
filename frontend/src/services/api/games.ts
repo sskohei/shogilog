@@ -7,6 +7,7 @@ import type {
   GameKifuUrlResponse,
   GameListQueryParams,
   GameListResponse,
+  KifuUploadResponse,
 } from "@/types/game";
 import type { Tag, TagListResponse } from "@/types/tag";
 
@@ -40,6 +41,15 @@ export async function fetchGame(id: string): Promise<Game> {
 export async function fetchGameKifuUrl(id: string): Promise<string | null> {
   const response = await apiFetch<GameKifuUrlResponse>(`/games/${id}/kifu-url`);
   return response.data.url;
+}
+
+export async function uploadKifu(content: string): Promise<string> {
+  const response = await apiFetch<KifuUploadResponse>("/games/kifu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  return response.data.kifu_path;
 }
 
 export async function updateGameMemo(id: string, memo: string): Promise<void> {

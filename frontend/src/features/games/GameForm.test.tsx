@@ -148,4 +148,62 @@ describe("GameForm", () => {
     expect(mockedUpdateGameAction).toHaveBeenCalledTimes(1);
     expect(mockedUpdateGameAction.mock.calls[0][0]).toBe("game-1");
   });
+
+  it("編集モードで既に棋譜が登録済みの場合は上書き注意文を表示する", () => {
+    render(
+      <GameForm
+        openings={openings}
+        mode="edit"
+        game={{ ...sampleGame, kifu_path: "user-1/existing.kif" }}
+      />
+    );
+
+    expect(
+      screen.getByText("貼り付けると、登録済みの棋譜が上書きされます。")
+    ).toBeInTheDocument();
+  });
+
+  it("KIFを貼り付けると対局日時が自動入力される", async () => {
+    const user = userEvent.setup();
+    render(<GameForm openings={openings} />);
+
+    const kifuText = "開始日時：2026/07/05 21:00:00\n先手：Alice\n後手：Bob\n  87 投了\n";
+    await user.click(screen.getByLabelText("棋譜(KIF形式)"));
+    await user.paste(kifuText);
+
+    expect(screen.getByLabelText("対局日時")).toHaveValue("2026-07-05T21:00");
+  });
+
+  it("KIF貼り付け後に手番を選ぶと対戦相手・結果が自動入力される", async () => {
+    const user = userEvent.setup();
+    render(<GameForm openings={openings} />);
+
+    const kifuText = "先手：Alice\n後手：Bob\n   1 ２六歩(27)\n  88 投了\n";
+    await user.click(screen.getByLabelText("棋譜(KIF形式)"));
+    await user.paste(kifuText);
+    await user.selectOptions(screen.getByLabelText("手番"), "sente");
+
+    expect(screen.getByLabelText("対戦相手")).toHaveValue("Bob");
+    expect(screen.getByLabelText("結果")).toHaveValue("win");
+  });
+
+  it("クリップボードから貼り付けボタンでテキストエリアが更新される", async () => {
+    const user = userEvent.setup();
+    const readText = vi.fn().mockResolvedValue("先手：Alice\n後手：Bob\n");
+    Object.defineProperty(navigator, "clipboard", {
+      value: { readText },
+      configurable: true,
+    });
+
+    render(<GameForm openings={openings} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "クリップボードから貼り付け" })
+    );
+
+    expect(readText).toHaveBeenCalledTimes(1);
+    expect(await screen.findByLabelText("棋譜(KIF形式)")).toHaveValue(
+      "先手：Alice\n後手：Bob\n"
+    );
+  });
 });
