@@ -75,7 +75,7 @@ export function GamesCountChart({
               <XAxis dataKey="label" tick={{ fontSize: 12 }} interval={0} />
               <YAxis allowDecimals={false} width={32} />
               <Tooltip />
-              <Bar dataKey="game_count" name="対局数" fill="#16a34a" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="game_count" name="対局数" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

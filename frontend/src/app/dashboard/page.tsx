@@ -61,6 +61,7 @@ export default async function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <WinRateBarChart
               title="プラットフォーム別勝率"
+              colorByCategory
               data={data.dashboard.platform_stats.map((stat) => ({
                 label: getPlatformName(stat.platform_id),
                 winRate: stat.win_rate,
@@ -75,6 +76,7 @@ export default async function DashboardPage() {
             />
             <WinRateBarChart
               title="先手・後手別勝率"
+              colorByCategory
               data={data.dashboard.side_stats.map((stat) => ({
                 label: SIDE_LABELS[stat.side] ?? stat.side,
                 winRate: stat.win_rate,

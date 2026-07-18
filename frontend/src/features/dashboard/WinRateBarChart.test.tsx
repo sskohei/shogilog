@@ -25,4 +25,20 @@ describe("WinRateBarChart", () => {
 
     expect(screen.getByText("データがありません")).toBeInTheDocument();
   });
+
+  it("colorByCategoryを指定するとカテゴリごとに色分けされた棒を描画する", () => {
+    const { container } = render(
+      <WinRateBarChart
+        title="先手・後手別勝率"
+        colorByCategory
+        data={[
+          { label: "先手", winRate: 0.6 },
+          { label: "後手", winRate: 0.4 },
+        ]}
+      />
+    );
+
+    const cells = container.querySelectorAll(".recharts-bar-rectangle");
+    expect(cells.length).toBe(2);
+  });
 });

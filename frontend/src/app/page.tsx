@@ -2,26 +2,96 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/layout/Logo";
+import { ResultBadge } from "@/features/games/Badges";
 import { PLATFORM_OPTIONS } from "@/features/games/platforms";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-const FEATURES = [
+function GamesListMockup() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between py-2 text-sm">
+          <span>07/18 将棋クエスト 四間飛車</span>
+          <ResultBadge result="win" />
+        </div>
+        <div className="flex items-center justify-between border-t border-border py-2 text-sm">
+          <span>07/16 将棋ウォーズ 矢倉</span>
+          <ResultBadge result="lose" />
+        </div>
+        <div className="flex items-center justify-between border-t border-border py-2 text-sm">
+          <span>07/14 81道場 中飛車</span>
+          <ResultBadge result="draw" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WinRateMockup() {
+  const rows = [
+    { label: "四間飛車", width: "68%", color: "var(--chart-1)" },
+    { label: "矢倉", width: "41%", color: "var(--chart-2)" },
+    { label: "中飛車", width: "55%", color: "var(--chart-3)" },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <span className="text-sm font-medium text-muted-foreground">戦法別勝率</span>
+      <div className="mt-4 space-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center gap-3">
+            <span className="w-16 shrink-0 text-xs text-muted-foreground">{row.label}</span>
+            <div className="h-2.5 flex-1 rounded-full bg-secondary">
+              <div
+                className="h-2.5 rounded-full"
+                style={{ width: row.width, backgroundColor: row.color }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TagsMemoMockup() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap gap-2">
+        <Badge>早指し</Badge>
+        <Badge variant="outline">研究会</Badge>
+        <Badge variant="outline">公式戦</Badge>
+      </div>
+      <p className="mt-4 border-t border-border pt-4 text-sm text-muted-foreground">
+        四間飛車を対局前レーティング1450で指し、対局後1468まで伸ばしました。次局は矢倉に対する対策を試します。
+      </p>
+    </div>
+  );
+}
+
+const SHOWCASE_FEATURES = [
   {
-    title: "複数サービスを横断した管理",
-    description: "将棋ウォーズ・将棋クエストなど、複数の対局サービスの履歴を一つの場所でまとめて管理できます。",
+    heading: "将棋ウォーズも、将棋クエストも、ひとつの記録に。",
+    body: "複数の対局サービスの棋譜・結果・レーティングを一箇所にまとめて管理。サービスをまたいでも、自分の対局史は途切れません。",
+    reverse: false,
+    mockup: <GamesListMockup />,
   },
   {
-    title: "自分用のメモ",
-    description: "対局ごとに振り返りメモを残し、次の対局に活かせます。",
+    heading: "得意な戦法も、苦手な相手も、数字でわかる。",
+    body: "プラットフォーム別・戦法別・先手後手別の勝率を自動で集計。感覚だけに頼らず、次に何を練習すべきかが見えてきます。",
+    reverse: true,
+    mockup: <WinRateMockup />,
   },
   {
-    title: "タグ管理",
-    description: "自由なタグ付けで対局を分類し、あとから見返しやすくします。",
+    heading: "タグとメモで、対局を資産に。",
+    body: "自由なタグ付けと振り返りメモで対局を分類。あとから見返しやすく、同じ失敗を繰り返さないための記録になります。",
+    reverse: false,
+    mockup: <TagsMemoMockup />,
   },
-  {
-    title: "戦法別の分析",
-    description: "使った戦法ごとの勝率を集計し、得意・不得意を把握できます。",
-  },
+] as const;
+
+const MORE_FEATURES = [
   {
     title: "レーティング推移",
     description: "プラットフォームごとのレーティング・段級位の推移をグラフで確認できます。",
@@ -30,51 +100,125 @@ const FEATURES = [
     title: "長期的な統計",
     description: "月ごとの対局数や先後別の勝率など、長期的な傾向を可視化します。",
   },
+  {
+    title: "KIF形式の棋譜貼り付け",
+    description: "棋譜をクリップボードから貼り付けるだけで、対局日時や結果を自動入力できます。",
+  },
 ];
 
 export default async function Home() {
   const user = await getCurrentUser();
 
+  const primaryCta = user ? (
+    <>
+      <Button
+        render={<Link href="/games">対局一覧を見る</Link>}
+        nativeButton={false}
+        className="h-11 rounded-full px-6 text-base"
+      />
+      <Button
+        render={<Link href="/dashboard">統計を見る</Link>}
+        nativeButton={false}
+        variant="outline"
+        className="h-11 rounded-full px-6 text-base"
+      />
+    </>
+  ) : (
+    <Button
+      render={<Link href="/auth/login">ログインしてはじめる</Link>}
+      nativeButton={false}
+      className="h-11 rounded-full px-6 text-base"
+    />
+  );
+
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-16">
-      <section className="flex flex-col items-center gap-6 py-8 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">ShogiLog</h1>
+    <div className="flex-1">
+      {/* ---------- Hero ---------- */}
+      <section className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-20 text-center">
+        <Logo size="lg" />
+        <h1 className="max-w-2xl text-balance text-4xl font-bold tracking-tight md:text-5xl">
+          対局を振り返るほど、強くなる。
+        </h1>
         <p className="max-w-xl text-muted-foreground">
-          ネット将棋の対局履歴を一元管理し、日々の振り返りや棋力向上を支援するWebアプリケーションです。
+          将棋ウォーズ・将棋クエストなど複数サービスの対局を一箇所に集約。勝率・戦法・レーティングの推移を見える化し、次の一局に活かします。
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {user ? (
-            <>
-              <Button render={<Link href="/games">対局一覧を見る</Link>} nativeButton={false} />
-              <Button
-                render={<Link href="/dashboard">統計を見る</Link>}
-                nativeButton={false}
-                variant="outline"
-              />
-            </>
-          ) : (
-            <Button render={<Link href="/auth/login">ログイン</Link>} nativeButton={false} />
-          )}
-        </div>
-      </section>
-
-      <section className="grid gap-4 py-8 md:grid-cols-3">
-        {FEATURES.map((feature) => (
-          <div key={feature.title} className="space-y-1 rounded-lg border border-border p-4">
-            <h2 className="text-sm font-medium">{feature.title}</h2>
-            <p className="text-sm text-muted-foreground">{feature.description}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="space-y-2 py-8">
-        <h2 className="text-sm font-medium">対応プラットフォーム</h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">{primaryCta}</div>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+          <span className="text-xs text-muted-foreground">対応サービス</span>
           {PLATFORM_OPTIONS.map((platform) => (
             <Badge key={platform.id} variant="outline">
               {platform.name}
             </Badge>
           ))}
+        </div>
+
+        {/* Hero product preview */}
+        <div className="relative w-full max-w-3xl pt-12">
+          <div className="absolute inset-x-6 inset-y-8 rounded-3xl bg-accent" aria-hidden="true" />
+          <div className="relative rounded-2xl border border-border bg-card p-6 text-left shadow-lg">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium text-muted-foreground">直近30日の勝率</span>
+              <span className="text-3xl font-bold tabular-nums">58%</span>
+            </div>
+            <div className="mt-6 flex h-24 items-end gap-3">
+              <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="h-[70%] w-full rounded-t bg-[var(--chart-1)]" />
+                <span className="text-[11px] text-muted-foreground">ウォーズ</span>
+              </div>
+              <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="h-[52%] w-full rounded-t bg-[var(--chart-2)]" />
+                <span className="text-[11px] text-muted-foreground">クエスト</span>
+              </div>
+              <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="h-[45%] w-full rounded-t bg-[var(--chart-3)]" />
+                <span className="text-[11px] text-muted-foreground">棋桜</span>
+              </div>
+              <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="h-[38%] w-full rounded-t bg-[var(--chart-4)]" />
+                <span className="text-[11px] text-muted-foreground">81道場</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- Feature showcase ---------- */}
+      <section className="mx-auto max-w-6xl space-y-20 px-4 py-16">
+        {SHOWCASE_FEATURES.map((feature) => (
+          <div
+            key={feature.heading}
+            className={`flex flex-col items-center gap-8 md:gap-14 ${
+              feature.reverse ? "md:flex-row-reverse" : "md:flex-row"
+            }`}
+          >
+            <div className="w-full flex-1">{feature.mockup}</div>
+            <div className="w-full flex-1 space-y-3">
+              <h2 className="text-balance text-2xl font-bold tracking-tight">{feature.heading}</h2>
+              <p className="text-muted-foreground">{feature.body}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* ---------- More features ---------- */}
+      <section className="mx-auto max-w-6xl px-4 py-16">
+        <div className="grid gap-4 md:grid-cols-3">
+          {MORE_FEATURES.map((feature) => (
+            <div key={feature.title} className="space-y-1 rounded-lg border border-border p-4">
+              <h3 className="text-sm font-medium">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- Closing CTA ---------- */}
+      <section className="bg-accent">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-20 text-center">
+          <h2 className="text-balance text-3xl font-bold tracking-tight">
+            今日の一局から、記録をはじめよう。
+          </h2>
+          <div className="flex flex-wrap items-center justify-center gap-3">{primaryCta}</div>
         </div>
       </section>
     </div>
