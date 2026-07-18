@@ -1,6 +1,6 @@
-# Development Guide
+# Deployment Design
 
-> **ShogiLog 開発ガイド**
+> **ShogiLog デプロイ・運用設計書**
 >
 > Version: 1.0.0  
 > Status: Draft  
@@ -12,279 +12,362 @@
 
 ## 1.1 本ドキュメントについて
 
-本ドキュメントではShogiLogの開発ルール・開発フロー・コーディング規約を定義します。
+本ドキュメントではShogiLogのデプロイ構成および運用方針について定義します。
 
-本プロジェクトは複数人開発を前提とし、一貫性と保守性を重視します。
-
----
-
-# 2. 開発方針
-
-## 2.1 基本方針
-
-ShogiLogの開発は以下を重視します。
-
-- 可読性
-- 保守性
-- 拡張性
-- 一貫性
-- 再利用性
+本システムはフロントエンド・バックエンド・データベースが分離された構成であり、それぞれに適したホスティングを行います。
 
 ---
 
-## 2.2 技術思想
-
-- フロントエンド：UI中心設計
-- バックエンド：ビジネスロジック中心設計
-- DB：Supabase中心設計
-- API：REST統一
-
----
-
-# 3. ブランチ戦略
-
-## 3.1 Git Flowベース
+# 2. 全体アーキテクチャ（本番構成）
 
 ```text
-main
-  └── develop
-        ├── feature/*
-        ├── fix/*
-        ├── refactor/*
-        └── chore/*
+[User]
+  ↓
+[Next.js (Vercel)]
+  ↓
+[FastAPI (API Server)]
+  ↓
+[Supabase PostgreSQL]
+  ↓
+[Supabase Auth / Storage]
 ```
 
 ---
 
-## 3.2 ブランチルール
+# 3. ホスティング構成
 
-|ブランチ|用途|
+## 3.1 フロントエンド
+
+### Vercelを使用
+
+- Next.js公式プラットフォーム
+- 自動デプロイ対応
+- Edge Network
+- SSR対応
+
+---
+
+### デプロイ対象
+
+- frontend/
+
+---
+
+### デプロイ方法
+
+- GitHub連携による自動デプロイ
+- mainブランチ = production
+- developブランチ = preview
+
+---
+
+## 3.2 バックエンド
+
+### FastAPI
+
+ホスティング候補：
+
+- Render
+- Fly.io
+- Railway
+- AWS (EC2 / ECS)
+
+---
+
+### 推奨構成（Version1）
+
+```text
+Render + Docker
+```
+
+理由：
+
+- 簡単
+- 無料枠あり
+- CI/CD対応
+- FastAPIと相性良い
+
+---
+
+### デプロイ対象
+
+- backend/
+
+---
+
+### 起動方法
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## 3.3 データベース
+
+### Supabase
+
+- PostgreSQL
+- Auth
+- Storage
+- RLS
+
+---
+
+### 管理方法
+
+- Supabase Dashboard
+- Supabase CLI（Migration）
+
+---
+
+# 4. 環境構成
+
+## 4.1 環境区分
+
+|環境|用途|
 |---|---|
-|main|本番|
-|develop|開発統合|
-|feature/*|新機能|
-|fix/*|バグ修正|
-|refactor/*|リファクタリング|
-|chore/*|雑務|
+|development|ローカル開発|
+|staging|テスト環境|
+|production|本番環境|
 
 ---
 
-## 3.3 命名例
+## 4.2 フロントエンド環境変数
+
+```env
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+---
+
+## 4.3 バックエンド環境変数
+
+```env
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_ANON_KEY=
+ENV=production
+```
+
+---
+
+# 5. CI/CD設計
+
+## 5.1 フロントエンド（Vercel）
+
+### 自動デプロイ
+
+- push → 自動ビルド
+- main → production
+- PR → preview
+
+---
+
+## 5.2 バックエンド（GitHub Actions）
+
+### フロー
 
 ```text
-feature/game-create
-feature/tag-system
-fix/login-error
-refactor/api-layer
-chore/update-deps
+push → test → build → deploy
 ```
 
 ---
 
-# 4. コミット規約
+### 例（概念）
 
-## 4.1 Conventional Commits
+```yaml
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest
+
+      - name: Deploy
+        run: echo "Deploy to Render/Fly.io"
+```
+
+---
+
+# 6. Docker構成
+
+## 6.1 バックエンドDocker
+
+```dockerfile
+FROM python:3.11
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+---
+
+## 6.2 docker-compose（開発用）
+
+```yaml
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+```
+
+---
+
+# 7. デプロイ戦略
+
+## 7.1 フロントエンド
+
+- main = production
+- PR = preview environment
+
+---
+
+## 7.2 バックエンド
+
+- main → production deploy
+- staging branch → test deploy
+
+---
+
+## 7.3 データベース
+
+- migrationベース運用
+- 本番直接編集禁止
+
+---
+
+# 8. ドメイン設計
+
+## 8.1 想定構成
 
 ```text
-type(scope): message
+https://shogilog.app
 ```
 
 ---
 
-## 4.2 Type一覧
-
-|type|意味|
-|---|---|
-|feat|新機能|
-|fix|バグ修正|
-|refactor|リファクタ|
-|chore|雑務|
-|docs|ドキュメント|
-|test|テスト|
-
----
-
-## 4.3 例
+## 8.2 API
 
 ```text
-feat(games): add game creation API
-fix(auth): fix login token bug
-refactor(api): restructure service layer
-docs(api): update endpoint documentation
+https://api.shogilog.app
 ```
 
 ---
 
-# 5. コーディング規約
+# 9. ログ管理
 
-## 5.1 共通
+## 9.1 フロントエンド
 
-- snake_case（backend）
-- camelCase（frontend）
-- UUID使用
-- magic number禁止
+- Vercel Logs
 
 ---
 
-## 5.2 Python（FastAPI）
+## 9.2 バックエンド
 
-### スタイル
-
-- PEP8準拠
-- type hints必須
-- Pydantic使用
+- Render/Fly.io Logs
+- stdout管理
 
 ---
 
-### 例
+## 9.3 データベース
 
-```python
-def get_game(game_id: str) -> GameSchema:
-    ...
-```
+- Supabase Logs
+- Query performance monitoring
 
 ---
 
-## 5.3 TypeScript（Next.js）
+# 10. 監視・運用
 
-### スタイル
+## 10.1 監視対象
 
-- strict mode有効
-- interface使用
-- any禁止
-
----
-
-### 例
-
-```ts
-interface Game {
-  id: string;
-  title: string;
-}
-```
+- APIレスポンス
+- エラーレート
+- DB遅延
+- CPU使用率
 
 ---
 
-# 6. ディレクトリルール
+## 10.2 ツール候補
 
-## 6.1 Backend
-
-- router → api/
-- business logic → services/
-- db access → repositories/
+- Sentry（エラー監視）
+- Supabase Dashboard
+- Vercel Analytics
 
 ---
 
-## 6.2 Frontend
+# 11. セキュリティ
 
-- UI → components/
-- feature → features/
-- API → services/api/
+## 11.1 基本方針
 
----
-
-# 7. 開発フロー
-
-## 7.1 基本フロー
-
-```text
-1. Issue作成
-2. featureブランチ作成
-3. 実装
-4. PR作成
-5. レビュー
-6. merge
-```
+- HTTPS必須
+- JWT認証
+- RLS有効化
+- 環境変数管理
+- secretsのGit管理禁止
 
 ---
 
-## 7.2 PRルール
+## 11.2 API保護
 
-- 必ずレビュー1名以上
-- CI通過必須
-- 小さな単位でPR作成
-
----
-
-# 8. Issue管理
-
-## 8.1 ルール
-
-- 1 Issue = 1タスク
-- 大きいタスクは分割
-- テンプレート使用
+- CORS制御
+- Rate limiting（将来）
+- Input validation
 
 ---
 
-## 8.2 ラベル
+# 12. バックアップ
 
-|label|意味|
-|---|---|
-|bug|バグ|
-|feature|新機能|
-|enhancement|改善|
-|docs|ドキュメント|
+## 12.1 Supabase
+
+- 自動バックアップ利用
+- 手動バックアップ（リリース前）
 
 ---
 
-# 9. テスト方針
+# 13. スケーリング
 
-## 9.1 Backend
+## 13.1 初期構成
 
-- pytest使用
-- service層を中心にテスト
-
----
-
-## 9.2 Frontend
-
-- React Testing Library
-- UIコンポーネントテスト
+- 単一FastAPIインスタンス
+- Supabase free/paid tier
+- Vercel serverless
 
 ---
 
-# 10. エラーハンドリング
+## 13.2 将来拡張
 
-## 10.1 Backend
-
-- AppException統一
-- エラーコード管理
-
----
-
-## 10.2 Frontend
-
-- toast通知
-- fallback UI
-- error boundary
-
----
-
-# 11. Gitルール
-
-## 11.1 禁止事項
-
-- main直接push禁止
-- force push禁止（原則）
-- 未レビューmerge禁止
-
----
-
-## 11.2 必須事項
-
-- PRベース開発
-- commit message統一
-- CI通過必須
-
----
-
-# 12. 設計思想まとめ
-
-ShogiLog開発は以下を基本とする。
-
-- 小さく作る
-- 明確に分離する
-- 再利用可能にする
-- 変更しやすくする
-- 一貫性を保つ
+- FastAPI horizontal scaling
+- Redis導入（キャッシュ）
+- CDN強化
