@@ -276,19 +276,29 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 ## 10.1 ログ種類
 
-- Access Log
-- Error Log
-- Application Log
+- Access Log: `backend/app/core/logging.py` の `access_logger`(`app.access`)。`backend/app/main.py` の `access_log_middleware`(`@app.middleware("http")`)が全リクエストについて1件出力する。
+- Error Log: 9.3 の `unhandled_exception_handler` が `logger.exception(...)` で出力する(ロガー名は `app.main`)。
+- Application Log(業務ログ): 各層で用途に応じて `logging.getLogger(__name__)` を使う想定。issue QA-3の時点では網羅的な呼び出し追加は行っていない。
+- Security Log(認証・認可失敗専用のログ)は用意していない。401/403もAccess Logの `status_code` として記録される(issue QA-3ではスコープ外)。
 
 ---
 
-## 10.2 ログ内容
+## 10.2 出力形式
 
-- user_id
-- endpoint
-- method
-- status_code
-- response_time
+`backend/app/core/logging.py` の `JsonLogFormatter` により、1行1JSONの構造化ログとして標準出力に出す。`setup_logging()` を `backend/app/main.py` の読み込み時に呼び、ルートロガーへ適用する。
+
+```json
+{"timestamp": "2026-07-18T11:31:58+0900", "level": "INFO", "logger": "app.access", "message": "GET /api/v1/dashboard 200", "request_id": "6a8ebf0b-...", "user_id": "3fbd...", "method": "GET", "path": "/api/v1/dashboard", "status_code": 200, "response_time_ms": 12.34}
+```
+
+## 10.3 ログ内容
+
+- request_id: `access_log_middleware` が `X-Request-ID` リクエストヘッダーがあればそれを使い、無ければ `uuid4()` で発行する。レスポンスヘッダー `X-Request-ID` としても返す(9.3のError Logとの相関に使う)。
+- user_id: `app/dependencies/auth.py` の `get_current_user` が認証成功時に `request.state.user_id` へセットする。未認証リクエストでは `null`。
+  - `ContextVar` ではなく `request.state`(ASGIの `scope["state"]` を参照する共有辞書)を使っている点に注意。`BaseHTTPMiddleware` の `call_next` は下流処理を別タスクで実行し、同期の依存関数(`get_current_user`)もスレッドプールで実行されるため、`ContextVar` へのセットはミドルウェア側から見えない(別コンテキストへコピーされる)。`request.state` は同一の `scope` 辞書への参照なので、タスク/スレッドをまたいでも確実に共有される。
+- method / path: `request.method` / `request.url.path`。
+- status_code: レスポンスの `status_code`(未処理例外は9.3のハンドラーが変換した500)。
+- response_time_ms: `time.perf_counter()` による計測(ミリ秒、小数点2桁)。
 
 ---
 
