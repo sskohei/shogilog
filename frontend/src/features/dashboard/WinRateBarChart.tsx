@@ -4,11 +4,20 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+const CATEGORY_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 
 export type WinRateDatum = {
   label: string;
@@ -22,9 +31,11 @@ function formatPercent(value: number): string {
 export function WinRateBarChart({
   title,
   data,
+  colorByCategory = false,
 }: {
   title: string;
   data: WinRateDatum[];
+  colorByCategory?: boolean;
 }) {
   return (
     <div className="rounded-lg border border-border p-4">
@@ -39,7 +50,15 @@ export function WinRateBarChart({
               <XAxis dataKey="label" tick={{ fontSize: 12 }} interval={0} />
               <YAxis domain={[0, 1]} tickFormatter={formatPercent} width={48} />
               <Tooltip formatter={(value) => formatPercent(Number(value))} />
-              <Bar dataKey="winRate" name="勝率" fill="#2563eb" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="winRate" name="勝率" fill="var(--chart-1)" radius={[4, 4, 0, 0]}>
+                {colorByCategory &&
+                  data.map((entry, index) => (
+                    <Cell
+                      key={entry.label}
+                      fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                    />
+                  ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

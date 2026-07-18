@@ -16,7 +16,12 @@ import { Button } from "@/components/ui/button";
 import { getPlatformName, getPlatformRatingMetric, getRatingMetricLabel } from "@/features/games/platforms";
 import type { RatingHistoryPoint } from "@/types/dashboard";
 
-const LINE_COLORS = ["#f97316", "#7c3aed", "#0891b2", "#db2777"];
+const LINE_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+];
 
 type RatingHistoryDatum = {
   platform_id: number;

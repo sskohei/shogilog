@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/layout/Logo";
 import { Nav } from "@/components/layout/Nav";
 import { logoutAction } from "@/features/auth/actions";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -11,8 +12,8 @@ export async function Header() {
   return (
     <header className="border-b border-border bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
-          ShogiLog
+        <Link href="/" className="shrink-0">
+          <Logo />
         </Link>
         <div className="min-w-0 flex-1 overflow-x-auto">
           <Nav />
