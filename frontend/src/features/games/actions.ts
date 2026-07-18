@@ -81,6 +81,12 @@ export async function updateMemoAction(
   return {};
 }
 
+function readTagIds(formData: FormData, field: string): string[] {
+  return formData
+    .getAll(field)
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+}
+
 function readGameFormInput(formData: FormData): GameFormInput {
   return {
     platform_id: formData.get("platform_id"),
@@ -165,6 +171,18 @@ export async function createGameAction(
     };
   }
 
+  const tagIds = readTagIds(formData, "tag_ids");
+  if (tagIds.length > 0) {
+    const results = await Promise.allSettled(
+      tagIds.map((tagId) => linkGameTag(id, tagId))
+    );
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.error(`Failed to link tag ${tagIds[index]} to game ${id}`, result.reason);
+      }
+    });
+  }
+
   redirect(`/games/${id}`);
 }
 
@@ -211,6 +229,25 @@ export async function updateGameAction(
         ? getApiErrorMessage(error, "対局の更新に失敗しました。")
         : "対局の更新に失敗しました。",
     };
+  }
+
+  const selectedTagIds = readTagIds(formData, "tag_ids");
+  const originalTagIds = readTagIds(formData, "original_tag_ids");
+  const selectedSet = new Set(selectedTagIds);
+  const originalSet = new Set(originalTagIds);
+  const tagIdsToAdd = selectedTagIds.filter((id) => !originalSet.has(id));
+  const tagIdsToRemove = originalTagIds.filter((id) => !selectedSet.has(id));
+
+  if (tagIdsToAdd.length > 0 || tagIdsToRemove.length > 0) {
+    const results = await Promise.allSettled([
+      ...tagIdsToAdd.map((tagId) => linkGameTag(gameId, tagId)),
+      ...tagIdsToRemove.map((tagId) => unlinkGameTag(gameId, tagId)),
+    ]);
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error(`Failed to update tags for game ${gameId}`, result.reason);
+      }
+    });
   }
 
   revalidatePath(`/games/${gameId}`);

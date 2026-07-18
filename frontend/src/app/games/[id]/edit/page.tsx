@@ -2,26 +2,33 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ApiError } from "@/lib/fetcher";
-import { fetchGame } from "@/services/api/games";
+import { fetchGame, fetchGameTags } from "@/services/api/games";
 import { fetchOpenings } from "@/services/api/openings";
+import { fetchTags } from "@/services/api/tags";
 import { GameForm } from "@/features/games/GameForm";
 import { ErrorState } from "@/components/ui/error-state";
 import { getApiErrorMessage } from "@/lib/errorMessages";
 import type { Game } from "@/types/game";
 import type { Opening } from "@/types/opening";
+import type { Tag } from "@/types/tag";
 
 export const metadata: Metadata = {
   title: "対局編集 | ShogiLog",
 };
 
 type EditGamePageData =
-  | { ok: true; game: Game; openings: Opening[] }
+  | { ok: true; game: Game; openings: Opening[]; gameTags: Tag[]; allTags: Tag[] }
   | { ok: false; message: string };
 
 async function loadEditGamePageData(id: string): Promise<EditGamePageData> {
   try {
-    const [game, openings] = await Promise.all([fetchGame(id), fetchOpenings()]);
-    return { ok: true, game, openings };
+    const [game, openings, gameTags, allTags] = await Promise.all([
+      fetchGame(id),
+      fetchOpenings(),
+      fetchGameTags(id),
+      fetchTags(),
+    ]);
+    return { ok: true, game, openings, gameTags, allTags };
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
       notFound();
@@ -48,7 +55,13 @@ export default async function EditGamePage({
       {!data.ok ? (
         <ErrorState message={data.message} />
       ) : (
-        <GameForm mode="edit" game={data.game} openings={data.openings} />
+        <GameForm
+          mode="edit"
+          game={data.game}
+          openings={data.openings}
+          gameTags={data.gameTags}
+          allTags={data.allTags}
+        />
       )}
     </div>
   );
