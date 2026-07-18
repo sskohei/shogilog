@@ -23,7 +23,7 @@ describe("OpeningDistributionPieChart", () => {
   it("7件を超える場合は上位5件とその他にまとめる", () => {
     render(
       <OpeningDistributionPieChart
-        title="相手の戦型"
+        title="対局相手の戦型"
         data={[
           { label: "矢倉", value: 10 },
           { label: "角換わり", value: 9 },
