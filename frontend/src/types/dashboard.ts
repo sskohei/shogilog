@@ -10,6 +10,11 @@ export type OpeningStat = {
   win_rate: number;
 };
 
+export type OpeningDistributionStat = {
+  opening_name: string;
+  game_count: number;
+};
+
 export type SideStat = {
   side: "sente" | "gote";
   win_rate: number;
@@ -49,6 +54,8 @@ export type DashboardData = {
   platform_stats: PlatformStat[];
   opening_stats: OpeningStat[];
   side_stats: SideStat[];
+  my_opening_distribution: OpeningDistributionStat[];
+  opponent_opening_distribution: OpeningDistributionStat[];
   daily_stats: DailyStat[];
   weekly_stats: WeeklyStat[];
   monthly_stats: MonthlyStat[];

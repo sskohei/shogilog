@@ -6,6 +6,7 @@ import { fetchOpenings } from "@/services/api/openings";
 import { getApiErrorMessage } from "@/lib/errorMessages";
 import { ErrorState } from "@/components/ui/error-state";
 import { GamesCountChart } from "@/features/dashboard/GamesCountChart";
+import { OpeningDistributionPieChart } from "@/features/dashboard/OpeningDistributionPieChart";
 import { RatingHistoryChart } from "@/features/dashboard/RatingHistoryChart";
 import { RecentGamesSection } from "@/features/dashboard/RecentGamesSection";
 import { SummaryCards } from "@/features/dashboard/SummaryCards";
@@ -77,6 +78,22 @@ export default async function DashboardPage() {
               data={data.dashboard.side_stats.map((stat) => ({
                 label: SIDE_LABELS[stat.side] ?? stat.side,
                 winRate: stat.win_rate,
+              }))}
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <OpeningDistributionPieChart
+              title="自分の戦型"
+              data={data.dashboard.my_opening_distribution.map((stat) => ({
+                label: stat.opening_name,
+                value: stat.game_count,
+              }))}
+            />
+            <OpeningDistributionPieChart
+              title="相手の戦型"
+              data={data.dashboard.opponent_opening_distribution.map((stat) => ({
+                label: stat.opening_name,
+                value: stat.game_count,
               }))}
             />
           </div>

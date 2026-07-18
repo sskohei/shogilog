@@ -8,6 +8,7 @@ from app.schemas.dashboard import (
     DailyStat,
     DashboardData,
     MonthlyStat,
+    OpeningDistributionStat,
     OpeningStat,
     PlatformStat,
     RatingHistoryPoint,
@@ -61,14 +62,24 @@ class DashboardService:
 
         wins = sum(1 for row in rows if row["result"] == "win")
         losses = sum(1 for row in rows if row["result"] == "lose")
+        opening_names = {
+            opening["id"]: opening["name"]
+            for opening in self.opening_repository.list_all()
+        }
 
         return DashboardData(
             total_games=len(rows),
             win_rate=_win_rate(wins, losses),
             recent_games=recent_games,
             platform_stats=self._aggregate_platform_stats(rows),
-            opening_stats=self._aggregate_opening_stats(rows),
+            opening_stats=self._aggregate_opening_stats(rows, opening_names),
             side_stats=self._aggregate_side_stats(rows),
+            my_opening_distribution=self._aggregate_opening_distribution(
+                rows, opening_names, "my_opening_id"
+            ),
+            opponent_opening_distribution=self._aggregate_opening_distribution(
+                rows, opening_names, "opponent_opening_id"
+            ),
             daily_stats=self._aggregate_daily_stats(rows, now),
             weekly_stats=self._aggregate_weekly_stats(rows),
             monthly_stats=self._aggregate_monthly_stats(rows),
@@ -95,12 +106,9 @@ class DashboardService:
             for platform_id, counts in sorted(grouped.items())
         ]
 
-    def _aggregate_opening_stats(self, rows: list[dict]) -> list[OpeningStat]:
-        opening_names = {
-            opening["id"]: opening["name"]
-            for opening in self.opening_repository.list_all()
-        }
-
+    def _aggregate_opening_stats(
+        self, rows: list[dict], opening_names: dict[int, str]
+    ) -> list[OpeningStat]:
         counts: dict[int, dict[str, int]] = {}
         totals: dict[int, int] = {}
 
@@ -132,6 +140,32 @@ class DashboardService:
                     counts[opening_id]["win"],
                     counts[opening_id]["lose"],
                 ),
+            )
+            for opening_id in ordered_ids
+        ]
+
+    def _aggregate_opening_distribution(
+        self, rows: list[dict], opening_names: dict[int, str], key: str
+    ) -> list[OpeningDistributionStat]:
+        counts: dict[int, int] = {}
+
+        for row in rows:
+            opening_id = row[key]
+
+            if opening_id is None:
+                continue
+
+            counts[opening_id] = counts.get(opening_id, 0) + 1
+
+        ordered_ids = sorted(
+            counts.keys(),
+            key=lambda opening_id: (-counts[opening_id], opening_names.get(opening_id, "")),
+        )
+
+        return [
+            OpeningDistributionStat(
+                opening_name=opening_names.get(opening_id, "Unknown"),
+                game_count=counts[opening_id],
             )
             for opening_id in ordered_ids
         ]

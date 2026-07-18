@@ -16,6 +16,11 @@ class OpeningStat(BaseModel):
     win_rate: float = Field(..., ge=0, le=1)
 
 
+class OpeningDistributionStat(BaseModel):
+    opening_name: str
+    game_count: int = Field(..., ge=0)
+
+
 class SideStat(BaseModel):
     side: Literal["sente", "gote"]
     win_rate: float = Field(..., ge=0, le=1)
@@ -55,6 +60,8 @@ class DashboardData(BaseModel):
     platform_stats: list[PlatformStat]
     opening_stats: list[OpeningStat]
     side_stats: list[SideStat]
+    my_opening_distribution: list[OpeningDistributionStat]
+    opponent_opening_distribution: list[OpeningDistributionStat]
     daily_stats: list[DailyStat]
     weekly_stats: list[WeeklyStat]
     monthly_stats: list[MonthlyStat]
