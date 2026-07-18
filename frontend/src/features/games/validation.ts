@@ -8,6 +8,7 @@ import type { GameResult, PlayerSide } from "@/types/game";
 
 const OPPONENT_NAME_MAX_LENGTH = 255;
 const MEMO_MAX_LENGTH = 2000;
+const KIFU_TEXT_MAX_LENGTH = 200_000;
 const RESULTS: GameResult[] = ["win", "lose", "draw"];
 const SIDES: PlayerSide[] = ["sente", "gote"];
 const PERCENTAGE_MIN = 0;
@@ -28,6 +29,7 @@ export type GameFormFieldErrors = {
   rank_after?: string[];
   opponent_rank?: string[];
   memo?: string[];
+  kifu_text?: string[];
 };
 
 export type GameFormInput = {
@@ -45,6 +47,7 @@ export type GameFormInput = {
   rank_after: FormDataEntryValue | null;
   opponent_rank: FormDataEntryValue | null;
   memo: FormDataEntryValue | null;
+  kifu_text: FormDataEntryValue | null;
 };
 
 export function toOptionalInt(value: FormDataEntryValue | null): number | null {
@@ -129,6 +132,11 @@ export function validateGameInput(input: GameFormInput): GameFormFieldErrors {
   const memo = toOptionalString(input.memo) ?? "";
   if (memo.length > MEMO_MAX_LENGTH) {
     errors.memo = ["メモが長すぎます"];
+  }
+
+  const kifuText = toOptionalString(input.kifu_text) ?? "";
+  if (kifuText.length > KIFU_TEXT_MAX_LENGTH) {
+    errors.kifu_text = ["棋譜の内容が長すぎます"];
   }
 
   if (!isValidPlatform) {

@@ -23,6 +23,7 @@ function makeValidInput(overrides: Partial<GameFormInput> = {}): GameFormInput {
     rank_after: null,
     opponent_rank: null,
     memo: null,
+    kifu_text: null,
     ...overrides,
   };
 }

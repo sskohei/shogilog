@@ -6,11 +6,7 @@ export function KifuSection({ kifuUrl }: { kifuUrl: string | null }) {
       <h2 className="text-sm font-medium">棋譜</h2>
       {kifuUrl ? (
         <Button
-          render={
-            <a href={kifuUrl} target="_blank" rel="noreferrer">
-              棋譜ファイルをダウンロード
-            </a>
-          }
+          render={<a href={kifuUrl}>棋譜ファイルをダウンロード</a>}
           nativeButton={false}
           variant="outline"
           size="sm"

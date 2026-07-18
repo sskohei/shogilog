@@ -101,6 +101,18 @@ class GameKifuUrlResponse(BaseModel):
     data: GameKifuUrl
 
 
+class KifuUploadRequest(BaseModel):
+    content: str = Field(..., min_length=1, max_length=200_000)
+
+
+class KifuPath(BaseModel):
+    kifu_path: str
+
+
+class KifuUploadResponse(BaseModel):
+    data: KifuPath
+
+
 class GameListFilters(BaseModel):
     page: int = Field(default=1, ge=1)
     limit: int = Field(default=20, ge=1, le=100)

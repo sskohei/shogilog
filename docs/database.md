@@ -440,7 +440,9 @@ gamesテーブルはShogiLogの中核となるテーブルです。
 
 ユーザーが登録した対局情報を保持し、統計・検索・戦法分析などの基礎データとして利用します。
 
-Version1では棋譜データ本体はテーブル内に保持せず、Supabase Storage の `kifu` バケットにファイルとして保存し、テーブルには `kifu_path` (ファイルパス)のみを保持します。棋譜ファイルの取得には署名付きURLを発行する `GET /games/{id}/kifu-url` (`docs/api.md` 12.6) を利用します。
+Version1では棋譜データ本体はテーブル内に保持せず、Supabase Storage の `kifu` バケットにファイルとして保存し、テーブルには `kifu_path` (ファイルパス)のみを保持します。棋譜ファイルの取得には署名付きURLを発行する `GET /games/{id}/kifu-url` (`docs/api.md` 12.6) を利用します。KIF形式の棋譜テキストの登録は `POST /games/kifu` (`docs/api.md` 12.7、フロントエンドの対局編集画面からの貼り付け登録に対応)で行い、返却された `kifu_path` を `POST /games` / `PUT /games/{id}` に渡して紐付けます。
+
+`storage.objects` には `kifu` バケット用のRLSポリシー(`supabase/migrations/20260718000000_add_kifu_storage_policies.sql`)があり、`(storage.foldername(name))[1] = auth.uid()::text` によってパスの先頭セグメント(`{user_id}/...`)が自分のものである場合のみ読み書きできます。バックエンドはservice-roleキーで接続するためRLSの影響を受けませんが、`kifu_path` の所有者スコープ検証(`GameService._validate_kifu_path`)と同じ制約をStorage層でも保証するために追加しています。
 
 ---
 

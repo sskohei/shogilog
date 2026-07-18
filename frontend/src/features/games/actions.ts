@@ -11,6 +11,7 @@ import {
   unlinkGameTag,
   updateGame,
   updateGameMemo,
+  uploadKifu,
 } from "@/services/api/games";
 import type { GameFormState } from "@/features/games/types";
 import {
@@ -40,6 +41,7 @@ const GAME_FIELD_ERROR_MESSAGES: Record<keyof GameFormFieldErrors, string> = {
   rank_after: "段位の指定が正しくありません",
   opponent_rank: "段位の指定が正しくありません",
   memo: "メモが長すぎます",
+  kifu_text: "棋譜の内容が長すぎます",
 };
 
 function mapGameFieldErrors(error: ApiError): GameFormFieldErrors {
@@ -95,6 +97,7 @@ function readGameFormInput(formData: FormData): GameFormInput {
     rank_after: formData.get("rank_after"),
     opponent_rank: formData.get("opponent_rank"),
     memo: formData.get("memo"),
+    kifu_text: formData.get("kifu_text"),
   };
 }
 
@@ -130,6 +133,20 @@ export async function createGameAction(
 
   const payload = buildGameCreatePayload(input);
 
+  const kifuText = toOptionalString(input.kifu_text);
+  if (kifuText) {
+    try {
+      payload.kifu_path = await uploadKifu(kifuText);
+    } catch (error) {
+      return {
+        errors: {},
+        message: error instanceof ApiError
+          ? getApiErrorMessage(error, "棋譜のアップロードに失敗しました。")
+          : "棋譜のアップロードに失敗しました。",
+      };
+    }
+  }
+
   let id: string;
   try {
     id = await createGame(payload);
@@ -164,6 +181,20 @@ export async function updateGameAction(
   }
 
   const payload = buildGameCreatePayload(input);
+
+  const kifuText = toOptionalString(input.kifu_text);
+  if (kifuText) {
+    try {
+      payload.kifu_path = await uploadKifu(kifuText);
+    } catch (error) {
+      return {
+        errors: {},
+        message: error instanceof ApiError
+          ? getApiErrorMessage(error, "棋譜のアップロードに失敗しました。")
+          : "棋譜のアップロードに失敗しました。",
+      };
+    }
+  }
 
   try {
     await updateGame(gameId, payload);

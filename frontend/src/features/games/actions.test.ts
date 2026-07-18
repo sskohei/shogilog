@@ -7,6 +7,7 @@ const {
   createGameMock,
   updateGameMock,
   deleteGameMock,
+  uploadKifuMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   redirectMock: vi.fn(),
@@ -14,6 +15,7 @@ const {
   createGameMock: vi.fn(),
   updateGameMock: vi.fn(),
   deleteGameMock: vi.fn(),
+  uploadKifuMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -29,6 +31,7 @@ vi.mock("@/services/api/games", () => ({
   createGame: createGameMock,
   updateGame: updateGameMock,
   deleteGame: deleteGameMock,
+  uploadKifu: uploadKifuMock,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -90,6 +93,7 @@ describe("createGameAction", () => {
   beforeEach(() => {
     redirectMock.mockClear();
     createGameMock.mockReset();
+    uploadKifuMock.mockReset();
   });
 
   it("必須項目が不正な場合はフィールドエラーを返し、createGame を呼び出さない", async () => {
@@ -145,6 +149,46 @@ describe("createGameAction", () => {
     expect(state.message).toBe("入力内容を確認してください。");
     expect(redirectMock).not.toHaveBeenCalled();
   });
+
+  it("kifu_text が入力されている場合はアップロードしてkifu_pathを送信する", async () => {
+    createGameMock.mockResolvedValue("game-1");
+    uploadKifuMock.mockResolvedValue("user-1/uploaded.kif");
+
+    const formData = makeValidFormData();
+    formData.set("kifu_text", "先手：Alice\n後手：Bob\n");
+
+    await createGameAction({ errors: {} }, formData);
+
+    expect(uploadKifuMock).toHaveBeenCalledWith("先手：Alice\n後手：Bob");
+    expect(createGameMock).toHaveBeenCalledWith(
+      expect.objectContaining({ kifu_path: "user-1/uploaded.kif" })
+    );
+  });
+
+  it("kifu_text が空の場合はアップロードせず、kifu_pathを送信しない", async () => {
+    createGameMock.mockResolvedValue("game-1");
+
+    await createGameAction({ errors: {} }, makeValidFormData());
+
+    expect(uploadKifuMock).not.toHaveBeenCalled();
+    const payload = createGameMock.mock.calls[0][0];
+    expect(payload).not.toHaveProperty("kifu_path");
+  });
+
+  it("棋譜のアップロードに失敗した場合はエラーメッセージを返し、createGame を呼び出さない", async () => {
+    uploadKifuMock.mockRejectedValue(
+      new ApiError("http", "アップロードに失敗しました", 400)
+    );
+
+    const formData = makeValidFormData();
+    formData.set("kifu_text", "先手：Alice\n後手：Bob\n");
+
+    const state = await createGameAction({ errors: {} }, formData);
+
+    expect(state.message).toBe("棋譜のアップロードに失敗しました。");
+    expect(createGameMock).not.toHaveBeenCalled();
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("updateGameAction", () => {
@@ -152,6 +196,7 @@ describe("updateGameAction", () => {
     redirectMock.mockClear();
     revalidatePathMock.mockClear();
     updateGameMock.mockReset();
+    uploadKifuMock.mockReset();
   });
 
   it("必須項目が不正な場合はフィールドエラーを返し、updateGame を呼び出さない", async () => {
@@ -212,6 +257,32 @@ describe("updateGameAction", () => {
     expect(state.errors.rank_after).toBeDefined();
     expect(state.message).toBe("入力内容を確認してください。");
     expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("kifu_text が空の場合は既存のkifu_pathを保持するためkifu_pathを送信しない", async () => {
+    updateGameMock.mockResolvedValue(undefined);
+
+    await updateGameAction("game-1", { errors: {} }, makeValidFormData());
+
+    expect(uploadKifuMock).not.toHaveBeenCalled();
+    const payload = updateGameMock.mock.calls[0][1];
+    expect(payload).not.toHaveProperty("kifu_path");
+  });
+
+  it("kifu_text が入力されている場合はアップロードしてkifu_pathを更新する", async () => {
+    updateGameMock.mockResolvedValue(undefined);
+    uploadKifuMock.mockResolvedValue("user-1/uploaded.kif");
+
+    const formData = makeValidFormData();
+    formData.set("kifu_text", "先手：Alice\n後手：Bob\n");
+
+    await updateGameAction("game-1", { errors: {} }, formData);
+
+    expect(uploadKifuMock).toHaveBeenCalledWith("先手：Alice\n後手：Bob");
+    expect(updateGameMock).toHaveBeenCalledWith(
+      "game-1",
+      expect.objectContaining({ kifu_path: "user-1/uploaded.kif" })
+    );
   });
 });
 
