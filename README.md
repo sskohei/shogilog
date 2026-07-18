@@ -1,397 +1,184 @@
-# 📚 Documentation
+# ShogiLog
 
-> ネット将棋の対局記録・分析アプリの設計ドキュメント
+> ネット将棋の対局記録・管理・分析を行うWebアプリケーション
 
 ---
 
 ## 概要
 
-このディレクトリには、本プロジェクトの設計・開発・運用に関するドキュメントをまとめています。
+複数のネット将棋サービスで指した対局を一元管理し、日々の振り返りや棋力向上を支援します。
+対局履歴の閲覧は各サービス単体でも可能ですが、サービス横断での管理・自分用メモ・タグ管理・
+戦法別分析・レーティング推移といった情報を一箇所にまとめることは困難です。ShogiLogはそれらを
+一元管理できる環境を提供します。
 
-本プロジェクトは **Next.js** をフロントエンド、**FastAPI** をバックエンドとして採用し、対局記録・棋譜管理・戦績分析・AI解析を行うWebアプリケーションです。
+Version 1では以下のサービスに対応しています。
 
-本ドキュメントは以下の目的で作成されています。
+- 将棋ウォーズ
+- 将棋クエスト
+- 棋桜
+- 81道場
 
-- 新しい開発者が短時間で環境構築できる
-- 設計思想を共有する
-- API仕様を統一する
-- データベース構造を管理する
-- 開発ルールを統一する
-- 保守・運用を容易にする
+フロントエンドは Next.js、バックエンドは FastAPI、データ基盤は Supabase(PostgreSQL / Auth / Storage)
+を採用しています。
 
 ---
 
-# ドキュメント一覧
+## ドキュメント一覧
+
+設計・開発に関する詳細ドキュメントは `docs/` にあります。
 
 | ドキュメント | 内容 |
-|--------------|------|
-| architecture.md | システム全体設計 |
-| setup.md | 開発環境構築 |
-| frontend.md | フロントエンド設計 |
-| backend.md | バックエンド設計 |
-| database.md | データベース設計 |
-| api.md | API仕様 |
-| auth.md | 認証・認可 |
-| deployment.md | Docker・デプロイ |
-| coding-rule.md | コーディング規約 |
-| contribution.md | 開発フロー |
-| testing.md | テスト方針 |
-| roadmap.md | 今後の開発予定 |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | システム全体設計・技術選定理由 |
+| [docs/architecture_final.md](docs/architecture_final.md) | アーキテクチャ補完設計 |
+| [docs/frontend.md](docs/frontend.md) | フロントエンド設計・規約 |
+| [docs/backend.md](docs/backend.md) | バックエンド設計・規約 |
+| [docs/database.md](docs/database.md) | データベース設計 |
+| [docs/api.md](docs/api.md) | API仕様 |
+| [docs/development.md](docs/development.md) | 開発ガイド(ブランチ運用・コミット規約・コーディング規約) |
+| [docs/deployment.md](docs/deployment.md) | デプロイ・運用設計 |
+
+開発の際は、コードとドキュメントに実装ルールをまとめた [CLAUDE.md](CLAUDE.md) も参照してください
+(ブランチ命名・PR命名・検証方針など)。
 
 ---
 
-# プロジェクト概要
+## 主な機能(実装済み)
 
-## 目的
-
-ネット将棋を指した際の対局情報を記録し、
-
-- 勝率
-- 戦法
-- 棋譜
-- レーティング
-- AI解析
-
-などを一元管理できるサービスを目指します。
-
-将来的にはUSI対応エンジン（YaneuraOuなど）による棋譜解析やAIコメント生成も実装予定です。
+- **対局管理**: 対局の登録・編集・削除・一覧表示・詳細表示
+- **タグ管理**: 対局への自由なタグ付け
+- **プロフィール**: プラットフォームごとのレーティング/段位の管理
+- **戦法(オープニング)**: お気に入り登録
+- **ダッシュボード**: 総対局数・勝率・戦法別勝率・月別対局数・レーティング推移などの集計とグラフ表示
+- **棋譜ファイル**: アップロードしたファイルへの署名付きURLでのアクセス
+  (KIF/CSA/SFENなど形式ごとの解析・表示機能は現状未実装で、単純なファイルリンクです)
+- **認証**: Supabase Authによるサインアップ・ログイン・ログアウト
 
 ---
 
-# 主な機能
+## 使用技術
 
-## 対局管理
+### Frontend
 
-- 対局登録
-- 編集
-- 削除
-- 一覧表示
+- Next.js 16 / React 19 / TypeScript
+- Tailwind CSS 4、shadcn/ui(内部コンポーネントは Base UI)
+- Supabase JSクライアント(`@supabase/supabase-js`, `@supabase/ssr`)
+- Recharts(グラフ)
+- Vitest / Testing Library(テスト)
 
----
-
-## 棋譜管理
-
-- KIF保存
-- CSA保存
-- SFEN保存
-- 棋譜検索
-- 棋譜閲覧
-
----
-
-## 戦績分析
-
-- 勝率
-- 月別対局数
-- 先手勝率
-- 後手勝率
-- 戦法別勝率
-- レーティング推移
-
----
-
-## AI解析（予定）
-
-- 棋譜解析
-- 評価値表示
-- 最善手表示
-- 悪手検出
-- AIコメント生成
-
----
-
-## ユーザー管理
-
-- 新規登録
-- ログイン
-- JWT認証
-- プロフィール管理
-
----
-
-# 使用技術
-
-## Frontend
-
-- Next.js
-- TypeScript
-- React
-- Tailwind CSS
-- shadcn/ui
-- TanStack Query
-- React Hook Form
-
----
-
-## Backend
+### Backend
 
 - FastAPI
-- SQLAlchemy
-- Alembic
-- Pydantic
-- JWT Authentication
+- Supabase Pythonクライアント(ORMは使用せず、直接Supabaseにアクセス)
+- Pydantic(バリデーション)
+- python-jose(JWT検証)
+- pytest(テスト)
+
+### データ基盤
+
+- Supabase(PostgreSQL / Auth / Storage / RLS)
+- スキーマは `supabase/migrations/` で管理
 
 ---
 
-## Database
+## ディレクトリ構成
 
-- PostgreSQL
-
----
-
-## Infrastructure
-
-- Docker
-- Docker Compose
-
----
-
-## Future
-
-- Redis
-- Celery
-- YaneuraOu
-- USI Engine
-- OpenAI API
-
----
-
-# システム構成
-
-```
-┌──────────────┐
-│   Browser    │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│   Next.js    │
-└──────┬───────┘
-       │ REST API
-       ▼
-┌──────────────┐
-│   FastAPI    │
-├──────────────┤
-│ Authentication│
-│ CRUD          │
-│ Analysis      │
-└──────┬────────┘
-       │
-       ▼
-┌──────────────┐
-│ PostgreSQL   │
-└──────────────┘
-```
-
----
-
-# ディレクトリ構成
-
-```
-project/
-
-├── frontend/
-│
-├── backend/
-│
-├── docs/
-│
-├── docker-compose.yml
-│
+```text
+shogilog/
+├── backend/       # FastAPIアプリケーション
+├── frontend/      # Next.js App Routerアプリケーション
+├── docs/          # 設計・開発ドキュメント
+├── supabase/      # DBマイグレーション
+├── CLAUDE.md      # 開発ルール(AIエージェント向けにも利用)
+├── LICENSE
 └── README.md
 ```
 
-詳細は各ドキュメントを参照してください。
-
 ---
 
-# 開発方針
+## セットアップ
 
-本プロジェクトでは以下の方針を採用します。
+### Backend
 
-## レイヤー分離
-
-フロントエンドとバックエンドを完全に分離します。
-
-```
-Frontend
-
-↓
-
-REST API
-
-↓
-
-Backend
-
-↓
-
-Database
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
----
+`backend/.env.example` を `backend/.env` にコピーし、以下を設定してください。
 
-## 責務の分離
-
-1つのクラス・関数には1つの責務だけを持たせます。
-
-例
-
-- Router
-- Service
-- CRUD
-- Repository
-- Model
-- Schema
-
-を分離して実装します。
-
----
-
-## API First
-
-フロントエンドより先にAPI仕様を決定します。
-
-API仕様書をもとに
-
-- Backend
-- Frontend
-
-を並行開発できる構成を目指します。
-
----
-
-## 型安全
-
-Frontend
-
-TypeScript
-
-Backend
-
-Pydantic
-
-を利用し、型の不一致をできる限り防ぎます。
-
----
-
-## 拡張性
-
-今後追加予定の機能
-
-- AI解析
-- 棋譜インポート
-- 棋譜エクスポート
-- レーティング自動取得
-- PWA対応
-- 通知機能
-
-を考慮した設計とします。
-
----
-
-# ブランチ運用
-
-GitHub Flowを採用します。
-
-```
-main
-  │
-develop
-  │
-feature/○○
+```env
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-詳細は
+### Frontend
 
-```
-docs/contribution.md
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-を参照してください。
+`frontend/.env.local.example` を `frontend/.env.local` にコピーし、以下を設定してください
+(`NEXT_PUBLIC_SUPABASE_*` はbackendと同じSupabaseプロジェクトを指定します)。
+
+```env
+BACKEND_API_BASE_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
 
 ---
 
-# コーディング規約
+## テスト
 
-命名規則やフォーマットについては
+```bash
+# Backend
+cd backend && pytest
 
+# Frontend
+cd frontend && npm test
 ```
-docs/coding-rule.md
-```
-
-を参照してください。
 
 ---
 
-# テスト
+## 開発ルール
 
-テスト方針については
-
-```
-docs/testing.md
-```
-
-を参照してください。
+ブランチ命名・PR命名・レイヤー規約(Router → Service → Repository → Supabase)・検証方針などの
+詳細は [CLAUDE.md](CLAUDE.md) と [docs/development.md](docs/development.md) を参照してください。
 
 ---
 
-# ドキュメント更新ルール
+## デプロイ
 
-コードを変更した場合は、必要に応じて対応するドキュメントも更新してください。
-
-例
-
-- API追加 → api.md
-- テーブル追加 → database.md
-- ディレクトリ変更 → architecture.md
-- 開発手順変更 → setup.md
+現時点では未デプロイ・CI未整備です。想定しているホスティング構成
+(Vercel + Render/Fly.io/Railway、Docker、GitHub Actionsなど)は
+[docs/deployment.md](docs/deployment.md) を参照してください。
 
 ---
 
-# 開発者向けチェックリスト
+## 今後の展望(Version 2以降)
 
-新しい機能を追加する場合は以下を確認してください。
+`docs/architecture.md` で構想している範囲です。現時点では未着手です。
 
-- [ ] API仕様を更新した
-- [ ] DB設計を更新した
-- [ ] 必要ならER図を更新した
-- [ ] フロントエンド画面を更新した
-- [ ] テストを追加した
-- [ ] ドキュメントを更新した
-
----
-
-# 今後の予定
-
-- 棋譜解析エンジンとの連携
-- AIレビュー機能
-- 棋譜共有
-- レーティンググラフ
-- ダークモード
-- モバイル対応
+- AI解析(USIエンジンによる評価値・最善手・悪手判定)
+- 棋譜共有(URL共有・公開設定・閲覧権限)
+- SNS機能(フォロー・コメント・いいね)
 - PWA対応
 
-詳細は
+---
 
-```
-docs/roadmap.md
-```
+## ライセンス
 
-を参照してください。
+[LICENSE](LICENSE)(MIT License)を参照してください。
 
 ---
 
-# ライセンス
+## 問い合わせ
 
-ライセンスについてはプロジェクトルートの `LICENSE` を参照してください。
-
----
-
-# お問い合わせ
-
-不具合や改善案はGitHub Issueを利用してください。
-
-Pull Requestは歓迎します。
-
----
+不具合や改善案はGitHub Issueを利用してください。Pull Requestは歓迎します。
