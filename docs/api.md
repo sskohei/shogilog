@@ -934,6 +934,26 @@ GET /api/v1/games
         "win_rate": 0.5
       }
     ],
+    "my_opening_distribution": [
+      {
+        "opening_name": "四間飛車",
+        "game_count": 12
+      },
+      {
+        "opening_name": "三間飛車",
+        "game_count": 8
+      }
+    ],
+    "opponent_opening_distribution": [
+      {
+        "opening_name": "矢倉",
+        "game_count": 10
+      },
+      {
+        "opening_name": "角換わり",
+        "game_count": 7
+      }
+    ],
     "daily_stats": [
       {
         "date": "2026-06-08",
@@ -969,6 +989,10 @@ GET /api/v1/games
   }
 }
 ```
+
+`my_opening_distribution` は `my_opening_id`、`opponent_opening_distribution` は
+`opponent_opening_id` を戦型ごとに集計した対局数(勝率ではない)。戦型が未設定の対局は
+どちらの集計からも除外される。
 
 `daily_stats` は直近30日分を返す(対局が無い日も `game_count: 0` で埋めて必ず30件返す)。
 `weekly_stats`(月曜始まりの週)・`monthly_stats`・`yearly_stats` は対局がある期間のみを返し、

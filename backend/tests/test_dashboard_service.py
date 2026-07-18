@@ -13,6 +13,7 @@ class FakeGameRepository:
                 "result": "win",
                 "platform_id": 1,
                 "my_opening_id": 6,
+                "opponent_opening_id": 7,
                 "side": "sente",
                 "played_at": "2026-06-10T10:00:00+00:00",
             },
@@ -20,6 +21,7 @@ class FakeGameRepository:
                 "result": "win",
                 "platform_id": 1,
                 "my_opening_id": 6,
+                "opponent_opening_id": 7,
                 "side": "sente",
                 "played_at": "2026-07-05T10:00:00+00:00",
             },
@@ -27,6 +29,7 @@ class FakeGameRepository:
                 "result": "lose",
                 "platform_id": 1,
                 "my_opening_id": 7,
+                "opponent_opening_id": 6,
                 "side": "gote",
                 "played_at": "2026-07-06T10:00:00+00:00",
             },
@@ -34,6 +37,7 @@ class FakeGameRepository:
                 "result": "draw",
                 "platform_id": 2,
                 "my_opening_id": None,
+                "opponent_opening_id": 6,
                 "side": "gote",
                 "played_at": "2026-07-07T10:00:00+00:00",
             },
@@ -151,6 +155,29 @@ def test_get_dashboard_opening_stats_excludes_null_opening():
     assert shikenbisha.win_rate == 1.0
 
 
+def test_get_dashboard_groups_my_opening_distribution():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    distribution = {o.opening_name: o.game_count for o in data.my_opening_distribution}
+    assert distribution == {"四間飛車": 2, "三間飛車": 1}
+    assert [o.opening_name for o in data.my_opening_distribution] == ["四間飛車", "三間飛車"]
+
+
+def test_get_dashboard_groups_opponent_opening_distribution():
+    game_repository = FakeGameRepository()
+    service = make_service(game_repository)
+
+    data = service.get_dashboard(game_repository.user_id)
+
+    distribution = {o.opening_name: o.game_count for o in data.opponent_opening_distribution}
+    assert distribution == {"三間飛車": 2, "四間飛車": 2}
+    # Tied counts are broken by opening name.
+    assert [o.opening_name for o in data.opponent_opening_distribution] == ["三間飛車", "四間飛車"]
+
+
 def test_get_dashboard_groups_side_stats():
     game_repository = FakeGameRepository()
     service = make_service(game_repository)
@@ -206,6 +233,7 @@ def test_get_dashboard_groups_daily_stats_within_last_30_days():
             "result": "win",
             "platform_id": 1,
             "my_opening_id": 6,
+            "opponent_opening_id": 7,
             "side": "sente",
             "played_at": "2025-01-01T10:00:00+00:00",
         }
@@ -254,6 +282,8 @@ def test_get_dashboard_handles_no_games():
     assert data.platform_stats == []
     assert data.opening_stats == []
     assert data.side_stats == []
+    assert data.my_opening_distribution == []
+    assert data.opponent_opening_distribution == []
     assert data.weekly_stats == []
     assert data.monthly_stats == []
     assert data.yearly_stats == []

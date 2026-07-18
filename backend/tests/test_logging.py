@@ -93,6 +93,8 @@ def test_access_log_records_authenticated_user_id(caplog, ec_key_pair):
                     platform_stats=[],
                     opening_stats=[],
                     side_stats=[],
+                    my_opening_distribution=[],
+                    opponent_opening_distribution=[],
                     daily_stats=[],
                     weekly_stats=[],
                     monthly_stats=[],
