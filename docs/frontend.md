@@ -276,17 +276,23 @@ export const fetchGames = async () => {
 
 ## 9.4 対局詳細ページのデータ取得・更新
 
-`/games/[id]` は `services/api/games.ts` の `fetchGame()` / `fetchGameKifuUrl()` を `Promise.all` で並列取得する Server Component。棋譜ファイルは `kifu_path` を直接返さず、バックエンドが発行する署名付きURL（`GET /games/{id}/kifu-url`、有効期限300秒）をそのつどダウンロードリンクとして表示する。
+`/games/[id]` は `services/api/games.ts` の `fetchGame()` / `fetchGameKifuUrl()` / `fetchGameTags()` と `services/api/tags.ts` の `fetchTags()` を `Promise.all` で並列取得する Server Component。棋譜ファイルは `kifu_path` を直接返さず、バックエンドが発行する署名付きURL（`GET /games/{id}/kifu-url`、有効期限300秒）をそのつどダウンロードリンクとして表示する。
 
 メモの編集は `features/games/actions.ts` の Server Action（`updateMemoAction`）が `updateGameMemo()`（`PUT /games/{id}`）を呼び出し、成功時に `revalidatePath` で詳細ページを再検証する。ログイン系の Server Action と同様、`useActionState` を前提にした状態(`MemoFormState`)を返す。
 
+タグの付け外しは `features/games/GameTagsSection.tsx`(Client Component)が担う。付与済みタグは `Badge` + 個別の解除ボタン(`unlinkGameTagAction` → `DELETE /games/{id}/tags/{tag_id}`)、未付与タグは `Select` + 追加ボタン(`linkGameTagAction` → `POST /games/{id}/tags`)で1件ずつ即時反映する。これは 9.5 の登録・編集フォーム内タグ選択とは独立した機能で、フォーム送信後にタグを個別に調整したい場合の手段として維持している。
+
 ---
 
-## 9.5 対局登録フォーム
+## 9.5 対局登録・編集フォーム
 
-`/games/new` は `features/games/GameForm.tsx`(Client Component)を描画する Server Component。`features/games/validation.ts` の `validateGameInput()` でフィールドバリデーションを行い、`features/games/actions.ts` の Server Action(`createGameAction`)が `createGame()`(`POST /games`)を呼び出す。成功時はレスポンスの `id` を使って作成した対局の詳細ページ(`/games/{id}`)へ `redirect` する。
+`/games/new` と `/games/[id]/edit` はいずれも `features/games/GameForm.tsx`(Client Component)を描画する Server Component で、`mode`(`"create" | "edit"`)props で挙動を切り替える共通コンポーネント。`features/games/validation.ts` の `validateGameInput()` でフィールドバリデーションを行い、`features/games/actions.ts` の Server Action(`createGameAction` / `updateGameAction`)がそれぞれ `createGame()`(`POST /games`)/ `updateGame()`(`PUT /games/{id}`)を呼び出す。成功時は対局の詳細ページ(`/games/{id}`)へ `redirect` する。
 
-対局サービス(platform)の選択肢は `features/games/platforms.ts` の静的マップをそのまま利用する(Platforms API 未実装のため)。棋譜ファイルのアップロードは対応しておらず、`kifu_path` は未設定のまま登録する(署名付きアップロードURLの発行は将来対応)。
+対局サービス(platform)の選択肢は `features/games/platforms.ts` の静的マップをそのまま利用する(Platforms API 未実装のため)。
+
+棋譜(KIF形式)はフォーム上部の `kifu_text` テキストエリアに直接入力、または「クリップボードから貼り付け」ボタン(`navigator.clipboard.readText()`)で貼り付けられる。貼り付けられたテキストは `features/games/kifParser.ts` の `parseKif()` でパースし、対局日時・対戦相手名・結果を自動入力する。送信時に `kifu_text` が空でなければ Server Action 内で `uploadKifu()` を先に呼び出して `kifu_path` を取得し、`createGame`/`updateGame` のペイロードに含める(アップロード失敗時は対局自体を作成/更新せずエラーを返す)。
+
+タグは `allTags`(ユーザーの全タグ、`fetchTags()` で取得)を選択肢として `Badge` チップ形式で表示し、クリックで選択/解除をトグルする(新規タグのその場作成はできず、事前に `/tags` で作成しておく必要がある)。編集モードでは `gameTags`(`fetchGameTags()` で取得した現在の付与タグ)で初期選択状態を復元する。選択結果は `tag_ids`(選択中のタグID)、編集モードのみ `original_tag_ids`(読み込み時点の付与タグID)という繰り返しの hidden input としてフォームに含まれ、`createGameAction`/`updateGameAction` が対局本体の作成/更新に成功した後、`tag_ids` と `original_tag_ids` の差分をもとに `linkGameTag()`/`unlinkGameTag()` をベストエフォートで呼び出す(タグの紐付けに失敗しても対局の作成/更新自体は成功として扱いリダイレクトする。失敗時は 9.4 の `GameTagsSection` で後から手動調整できる)。
 
 ---
 

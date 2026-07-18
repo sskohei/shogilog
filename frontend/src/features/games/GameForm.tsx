@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import { showErrorToast } from "@/lib/toast";
 import { useActionErrorToast } from "@/lib/useActionErrorToast";
 import type { Game, GameResult, PlayerSide } from "@/types/game";
 import type { Opening } from "@/types/opening";
+import type { Tag } from "@/types/tag";
 
 function toDatetimeLocalValue(iso: string): string {
   const date = new Date(iso);
@@ -35,10 +37,14 @@ export function GameForm({
   openings,
   mode = "create",
   game,
+  allTags,
+  gameTags = [],
 }: {
   openings: Opening[];
   mode?: "create" | "edit";
   game?: Game;
+  allTags: Tag[];
+  gameTags?: Tag[];
 }) {
   const action =
     mode === "edit" && game
@@ -59,8 +65,17 @@ export function GameForm({
   const [opponentName, setOpponentName] = useState(game?.opponent_name ?? "");
   const [result, setResult] = useState<GameResult | "">(game?.result ?? "");
   const [kifuText, setKifuText] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    gameTags.map((tag) => tag.id)
+  );
 
   const parsedKif = useMemo(() => parseKif(kifuText), [kifuText]);
+
+  function toggleTag(tagId: string) {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+  }
 
   function applyOpponentAndResultFromKif(
     forSide: PlayerSide | "",
@@ -430,6 +445,54 @@ export function GameForm({
             messages={state.errors.opponent_rating}
           />
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>タグ</Label>
+        {allTags.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            利用可能なタグがありません。タグ管理画面で作成してください。
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {allTags.map((tag) => {
+              const selected = selectedTagIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleTag(tag.id)}
+                  className="cursor-pointer"
+                >
+                  <Badge
+                    variant={selected ? "default" : "outline"}
+                    className="h-7 px-3 py-1 text-sm"
+                    style={
+                      selected && tag.color
+                        ? { backgroundColor: tag.color, color: "#fff" }
+                        : undefined
+                    }
+                  >
+                    {tag.name}
+                  </Badge>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {selectedTagIds.map((id) => (
+          <input key={id} type="hidden" name="tag_ids" value={id} />
+        ))}
+        {mode === "edit" &&
+          gameTags.map((tag) => (
+            <input
+              key={tag.id}
+              type="hidden"
+              name="original_tag_ids"
+              value={tag.id}
+            />
+          ))}
       </div>
 
       <div className="space-y-1.5">

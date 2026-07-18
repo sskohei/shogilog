@@ -8,6 +8,8 @@ const {
   updateGameMock,
   deleteGameMock,
   uploadKifuMock,
+  linkGameTagMock,
+  unlinkGameTagMock,
 } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
   redirectMock: vi.fn(),
@@ -16,6 +18,8 @@ const {
   updateGameMock: vi.fn(),
   deleteGameMock: vi.fn(),
   uploadKifuMock: vi.fn(),
+  linkGameTagMock: vi.fn(),
+  unlinkGameTagMock: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -32,6 +36,8 @@ vi.mock("@/services/api/games", () => ({
   updateGame: updateGameMock,
   deleteGame: deleteGameMock,
   uploadKifu: uploadKifuMock,
+  linkGameTag: linkGameTagMock,
+  unlinkGameTag: unlinkGameTagMock,
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -94,6 +100,7 @@ describe("createGameAction", () => {
     redirectMock.mockClear();
     createGameMock.mockReset();
     uploadKifuMock.mockReset();
+    linkGameTagMock.mockReset();
   });
 
   it("必須項目が不正な場合はフィールドエラーを返し、createGame を呼び出さない", async () => {
@@ -189,6 +196,33 @@ describe("createGameAction", () => {
     expect(createGameMock).not.toHaveBeenCalled();
     expect(redirectMock).not.toHaveBeenCalled();
   });
+
+  it("選択したタグがある場合は作成後に linkGameTag を呼び出す", async () => {
+    createGameMock.mockResolvedValue("game-1");
+    linkGameTagMock.mockResolvedValue(undefined);
+
+    const formData = makeValidFormData();
+    formData.append("tag_ids", "tag-a");
+    formData.append("tag_ids", "tag-b");
+
+    await createGameAction({ errors: {} }, formData);
+
+    expect(linkGameTagMock).toHaveBeenCalledWith("game-1", "tag-a");
+    expect(linkGameTagMock).toHaveBeenCalledWith("game-1", "tag-b");
+    expect(redirectMock).toHaveBeenCalledWith("/games/game-1");
+  });
+
+  it("タグの紐付けに失敗しても対局登録は成功しリダイレクトされる", async () => {
+    createGameMock.mockResolvedValue("game-1");
+    linkGameTagMock.mockRejectedValue(new ApiError("http", "失敗", 500));
+
+    const formData = makeValidFormData();
+    formData.append("tag_ids", "tag-a");
+
+    await createGameAction({ errors: {} }, formData);
+
+    expect(redirectMock).toHaveBeenCalledWith("/games/game-1");
+  });
 });
 
 describe("updateGameAction", () => {
@@ -197,6 +231,8 @@ describe("updateGameAction", () => {
     revalidatePathMock.mockClear();
     updateGameMock.mockReset();
     uploadKifuMock.mockReset();
+    linkGameTagMock.mockReset();
+    unlinkGameTagMock.mockReset();
   });
 
   it("必須項目が不正な場合はフィールドエラーを返し、updateGame を呼び出さない", async () => {
@@ -283,6 +319,38 @@ describe("updateGameAction", () => {
       "game-1",
       expect.objectContaining({ kifu_path: "user-1/uploaded.kif" })
     );
+  });
+
+  it("追加されたタグは linkGameTag、外されたタグは unlinkGameTag を呼び出す", async () => {
+    updateGameMock.mockResolvedValue(undefined);
+    linkGameTagMock.mockResolvedValue(undefined);
+    unlinkGameTagMock.mockResolvedValue(undefined);
+
+    const formData = makeValidFormData();
+    formData.append("original_tag_ids", "tag-a");
+    formData.append("original_tag_ids", "tag-b");
+    formData.append("tag_ids", "tag-b");
+    formData.append("tag_ids", "tag-c");
+
+    await updateGameAction("game-1", { errors: {} }, formData);
+
+    expect(linkGameTagMock).toHaveBeenCalledWith("game-1", "tag-c");
+    expect(linkGameTagMock).not.toHaveBeenCalledWith("game-1", "tag-b");
+    expect(unlinkGameTagMock).toHaveBeenCalledWith("game-1", "tag-a");
+    expect(unlinkGameTagMock).not.toHaveBeenCalledWith("game-1", "tag-b");
+  });
+
+  it("タグの変更が無い場合は link/unlink を呼び出さない", async () => {
+    updateGameMock.mockResolvedValue(undefined);
+
+    const formData = makeValidFormData();
+    formData.append("original_tag_ids", "tag-a");
+    formData.append("tag_ids", "tag-a");
+
+    await updateGameAction("game-1", { errors: {} }, formData);
+
+    expect(linkGameTagMock).not.toHaveBeenCalled();
+    expect(unlinkGameTagMock).not.toHaveBeenCalled();
   });
 });
 

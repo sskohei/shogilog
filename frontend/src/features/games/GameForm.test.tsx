@@ -41,6 +41,23 @@ const openings = [
   { id: 2, name: "居飛車", slug: "ibisha", category: "static_rook" as const, description: null, is_active: true, created_at: "" },
 ];
 
+const tagA = {
+  id: "tag-a",
+  user_id: "user-1",
+  name: "早指し",
+  color: "#ff0000",
+  created_at: "",
+  updated_at: "",
+};
+const tagB = {
+  id: "tag-b",
+  user_id: "user-1",
+  name: "研究会",
+  color: null,
+  created_at: "",
+  updated_at: "",
+};
+
 describe("GameForm", () => {
   afterEach(() => {
     mockedCreateGameAction.mockReset();
@@ -48,7 +65,7 @@ describe("GameForm", () => {
   });
 
   it("必須フィールドを表示する", () => {
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     expect(screen.getByLabelText("対局サービス")).toBeInTheDocument();
     expect(screen.getByLabelText("対局日時")).toBeInTheDocument();
@@ -62,7 +79,7 @@ describe("GameForm", () => {
     });
 
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     await user.click(screen.getByRole("button", { name: "登録する" }));
 
@@ -75,7 +92,7 @@ describe("GameForm", () => {
     mockedCreateGameAction.mockResolvedValue({ errors: {} });
 
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     await user.selectOptions(screen.getByLabelText("対局サービス"), "1");
     await user.type(screen.getByLabelText("対局日時"), "2026-07-05T10:00");
@@ -99,7 +116,7 @@ describe("GameForm", () => {
     });
 
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     await user.click(screen.getByRole("button", { name: "登録する" }));
 
@@ -110,7 +127,7 @@ describe("GameForm", () => {
 
   it("段位制プラットフォーム選択時のみ段位フィールドを表示し、ラベルが%に変わる", async () => {
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     expect(screen.queryByLabelText("対局前段位")).not.toBeInTheDocument();
     expect(screen.getByLabelText("対局前レーティング")).toBeInTheDocument();
@@ -129,7 +146,7 @@ describe("GameForm", () => {
   });
 
   it("編集モードでは既存の値が初期表示され、更新するボタンが表示される", () => {
-    render(<GameForm openings={openings} mode="edit" game={sampleGame} />);
+    render(<GameForm openings={openings} allTags={[]} mode="edit" game={sampleGame} />);
 
     expect(screen.getByRole("button", { name: "更新する" })).toBeInTheDocument();
     expect(screen.getByLabelText("対局サービス")).toHaveValue("1");
@@ -141,7 +158,7 @@ describe("GameForm", () => {
   it("編集モードでの送信は updateGameAction を呼び出す", async () => {
     mockedUpdateGameAction.mockResolvedValue({ errors: {} });
     const user = userEvent.setup();
-    render(<GameForm openings={openings} mode="edit" game={sampleGame} />);
+    render(<GameForm openings={openings} allTags={[]} mode="edit" game={sampleGame} />);
 
     await user.click(screen.getByRole("button", { name: "更新する" }));
 
@@ -153,6 +170,7 @@ describe("GameForm", () => {
     render(
       <GameForm
         openings={openings}
+        allTags={[]}
         mode="edit"
         game={{ ...sampleGame, kifu_path: "user-1/existing.kif" }}
       />
@@ -165,7 +183,7 @@ describe("GameForm", () => {
 
   it("KIFを貼り付けると対局日時が自動入力される", async () => {
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     const kifuText = "開始日時：2026/07/05 21:00:00\n先手：Alice\n後手：Bob\n  87 投了\n";
     await user.click(screen.getByLabelText("棋譜(KIF形式)"));
@@ -176,7 +194,7 @@ describe("GameForm", () => {
 
   it("KIF貼り付け後に手番を選ぶと対戦相手・結果が自動入力される", async () => {
     const user = userEvent.setup();
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     const kifuText = "先手：Alice\n後手：Bob\n   1 ２六歩(27)\n  88 投了\n";
     await user.click(screen.getByLabelText("棋譜(KIF形式)"));
@@ -195,7 +213,7 @@ describe("GameForm", () => {
       configurable: true,
     });
 
-    render(<GameForm openings={openings} />);
+    render(<GameForm openings={openings} allTags={[]} />);
 
     await user.click(
       screen.getByRole("button", { name: "クリップボードから貼り付け" })
@@ -205,5 +223,95 @@ describe("GameForm", () => {
     expect(await screen.findByLabelText("棋譜(KIF形式)")).toHaveValue(
       "先手：Alice\n後手：Bob\n"
     );
+  });
+
+  it("利用可能なタグを表示する", () => {
+    render(<GameForm openings={openings} allTags={[tagA, tagB]} />);
+
+    expect(screen.getByRole("button", { name: "早指し" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "研究会" })).toBeInTheDocument();
+  });
+
+  it("タグがない場合は案内文を表示する", () => {
+    render(<GameForm openings={openings} allTags={[]} />);
+
+    expect(
+      screen.getByText("利用可能なタグがありません。タグ管理画面で作成してください。")
+    ).toBeInTheDocument();
+  });
+
+  it("編集モードでは既存のタグが選択済み状態で初期表示される", () => {
+    render(
+      <GameForm
+        openings={openings}
+        allTags={[tagA, tagB]}
+        gameTags={[tagA]}
+        mode="edit"
+        game={sampleGame}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "早指し" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.getByRole("button", { name: "研究会" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+  });
+
+  it("タグをクリックすると選択状態がトグルされる", async () => {
+    const user = userEvent.setup();
+    render(<GameForm openings={openings} allTags={[tagA]} />);
+
+    const tagButton = screen.getByRole("button", { name: "早指し" });
+    expect(tagButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(tagButton);
+    expect(tagButton).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(tagButton);
+    expect(tagButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("送信時に選択したタグIDを tag_ids として FormData に含める", async () => {
+    mockedCreateGameAction.mockResolvedValue({ errors: {} });
+    const user = userEvent.setup();
+    render(<GameForm openings={openings} allTags={[tagA, tagB]} />);
+
+    await user.click(screen.getByRole("button", { name: "早指し" }));
+    await user.click(screen.getByRole("button", { name: "登録する" }));
+
+    expect(mockedCreateGameAction).toHaveBeenCalledTimes(1);
+    const [, formData] = mockedCreateGameAction.mock.calls[0];
+    expect((formData as FormData).getAll("tag_ids")).toEqual(["tag-a"]);
+  });
+
+  it("編集モードでは元々付与されていたタグIDを original_tag_ids として含める", async () => {
+    mockedUpdateGameAction.mockResolvedValue({ errors: {} });
+    const user = userEvent.setup();
+    render(
+      <GameForm
+        openings={openings}
+        allTags={[tagA, tagB]}
+        gameTags={[tagA]}
+        mode="edit"
+        game={sampleGame}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "研究会" }));
+    await user.click(screen.getByRole("button", { name: "更新する" }));
+
+    expect(mockedUpdateGameAction).toHaveBeenCalledTimes(1);
+    const formData = mockedUpdateGameAction.mock.calls[0][2];
+    expect((formData as FormData).getAll("tag_ids").sort()).toEqual([
+      "tag-a",
+      "tag-b",
+    ]);
+    expect((formData as FormData).getAll("original_tag_ids")).toEqual([
+      "tag-a",
+    ]);
   });
 });
