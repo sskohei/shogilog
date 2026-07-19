@@ -39,6 +39,15 @@ describe("updateSession", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/games");
   });
 
+  it("ログイン済みでサインアップページにアクセスすると /games へリダイレクトする", async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: "u1" } } });
+    const request = new NextRequest("http://localhost:3000/auth/signup");
+
+    const response = await updateSession(request);
+
+    expect(response.headers.get("location")).toBe("http://localhost:3000/games");
+  });
+
   it("保護されていないルートかつ未ログインの場合はそのまま通す", async () => {
     getUserMock.mockResolvedValue({ data: { user: null } });
     const request = new NextRequest("http://localhost:3000/");

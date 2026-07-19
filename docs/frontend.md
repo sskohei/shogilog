@@ -270,7 +270,7 @@ export const fetchGames = async () => {
 
 `BACKEND_API_BASE_URL` に加え、`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` を `frontend/.env.local`（gitignore 済み）に設定する。
 
-ログイン・ログアウトは `features/auth/actions.ts` の Server Action（`loginAction` / `logoutAction`）が `supabase.auth.signInWithPassword` / `supabase.auth.signOut` を呼び出す。
+ログイン・ログアウトは `features/auth/actions.ts` の Server Action（`loginAction` / `logoutAction`）が `supabase.auth.signInWithPassword` / `supabase.auth.signOut` を呼び出す。アカウント登録は同ファイルの `signupAction` が `supabase.auth.signUp` を呼び出し、メール確認が有効な環境向けに `app/auth/callback/route.ts` で `exchangeCodeForSession` によるセッション確立を行う。
 
 ---
 
@@ -370,6 +370,8 @@ Next.js App Routerを使用します。
 |/openings|戦法|
 |/dashboard|統計|
 |/auth/login|ログイン|
+|/auth/signup|アカウント登録|
+|/auth/callback|メール確認後のセッション確立用コールバック（画面なし）|
 
 ---
 

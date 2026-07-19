@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginAction } from "@/features/auth/actions";
-import { initialLoginFormState } from "@/features/auth/types";
+import { signupAction } from "@/features/auth/actions";
+import { initialSignupFormState } from "@/features/auth/types";
 import { useActionErrorToast } from "@/lib/useActionErrorToast";
 
-export function LoginForm() {
+export function SignupForm() {
   const [state, formAction, pending] = useActionState(
-    loginAction,
-    initialLoginFormState
+    signupAction,
+    initialSignupFormState
   );
   useActionErrorToast(state.message);
   const [email, setEmail] = useState("");
@@ -46,7 +46,7 @@ export function LoginForm() {
           type="password"
           required
           maxLength={128}
-          autoComplete="current-password"
+          autoComplete="new-password"
           aria-invalid={state.errors.password ? true : undefined}
           aria-describedby={state.errors.password ? "password-error" : undefined}
         />
@@ -59,14 +59,20 @@ export function LoginForm() {
         </p>
       )}
 
+      {state.notice && (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {state.notice}
+        </p>
+      )}
+
       <Button type="submit" disabled={pending} className="w-full">
-        ログイン
+        アカウントを作成
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        アカウントをお持ちでない方は{" "}
-        <Link href="/auth/signup" className="underline underline-offset-4">
-          新規登録
+        すでにアカウントをお持ちの方は{" "}
+        <Link href="/auth/login" className="underline underline-offset-4">
+          ログイン
         </Link>
       </p>
     </form>

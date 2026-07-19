@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // docs/frontend.md §8.3 に明記された保護ルート。
 const PROTECTED_ROUTES = ["/games", "/dashboard", "/profile", "/tags", "/openings"];
 const LOGIN_ROUTE = "/auth/login";
+const AUTH_ENTRY_ROUTES = [LOGIN_ROUTE, "/auth/signup"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -39,13 +40,13 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = PROTECTED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
-  const isLoginRoute = pathname === LOGIN_ROUTE;
+  const isAuthEntryRoute = AUTH_ENTRY_ROUTES.includes(pathname);
 
   if (isProtectedRoute && !user) {
     return NextResponse.redirect(new URL(LOGIN_ROUTE, request.url));
   }
 
-  if (isLoginRoute && user) {
+  if (isAuthEntryRoute && user) {
     return NextResponse.redirect(new URL("/games", request.url));
   }
 

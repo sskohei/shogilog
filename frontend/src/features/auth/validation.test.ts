@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateLoginInput } from "@/features/auth/validation";
+import { validateLoginInput, validateSignupInput } from "@/features/auth/validation";
 
 describe("validateLoginInput", () => {
   it("エラーなしの場合は空オブジェクトを返す", () => {
@@ -49,6 +49,59 @@ describe("validateLoginInput", () => {
 
   it("パスワードが長すぎる場合はエラーを返す", () => {
     const errors = validateLoginInput({
+      email: "user@example.com",
+      password: "a".repeat(129),
+    });
+
+    expect(errors.password).toEqual(["パスワードが長すぎます"]);
+  });
+});
+
+describe("validateSignupInput", () => {
+  it("エラーなしの場合は空オブジェクトを返す", () => {
+    const errors = validateSignupInput({
+      email: "user@example.com",
+      password: "password123",
+    });
+
+    expect(errors).toEqual({});
+  });
+
+  it("メールアドレスが未入力の場合はエラーを返す", () => {
+    const errors = validateSignupInput({ email: "", password: "password123" });
+
+    expect(errors.email).toEqual(["メールアドレスを入力してください"]);
+  });
+
+  it("メールアドレスの形式が不正な場合はエラーを返す", () => {
+    const errors = validateSignupInput({
+      email: "invalid-email",
+      password: "password123",
+    });
+
+    expect(errors.email).toEqual(["メールアドレスの形式が正しくありません"]);
+  });
+
+  it("パスワードが未入力の場合はエラーを返す", () => {
+    const errors = validateSignupInput({
+      email: "user@example.com",
+      password: "",
+    });
+
+    expect(errors.password).toEqual(["パスワードを入力してください"]);
+  });
+
+  it("パスワードが短すぎる場合はエラーを返す", () => {
+    const errors = validateSignupInput({
+      email: "user@example.com",
+      password: "abc12",
+    });
+
+    expect(errors.password).toEqual(["パスワードは6文字以上で入力してください"]);
+  });
+
+  it("パスワードが長すぎる場合はエラーを返す", () => {
+    const errors = validateSignupInput({
       email: "user@example.com",
       password: "a".repeat(129),
     });
