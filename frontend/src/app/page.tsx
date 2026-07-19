@@ -106,15 +106,24 @@ function LongTermStatsMockup() {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <span className="text-sm font-medium text-muted-foreground">月別対局数</span>
-      <div className="mt-4 flex h-20 items-end gap-3">
+      <div className="mt-4 flex h-16 items-end gap-3">
         {months.map((month) => (
-          <div key={month.label} className="flex flex-1 flex-col items-center gap-2">
+          <div key={month.label} className="flex h-full flex-1 flex-col justify-end">
             <div
               className="w-full rounded-t"
               style={{ height: month.height, backgroundColor: month.color }}
             />
-            <span className="text-[11px] text-muted-foreground">{month.label}</span>
           </div>
+        ))}
+      </div>
+      <div className="mt-2 flex gap-3">
+        {months.map((month) => (
+          <span
+            key={month.label}
+            className="flex-1 text-center text-[11px] text-muted-foreground"
+          >
+            {month.label}
+          </span>
         ))}
       </div>
     </div>
