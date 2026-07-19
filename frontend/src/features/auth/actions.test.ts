@@ -149,6 +149,28 @@ describe("signupAction", () => {
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
+  it("メール送信のレート制限に達した場合は専用のエラーメッセージを返す", async () => {
+    signUpMock.mockResolvedValue({
+      data: { session: null },
+      error: {
+        message: "email rate limit exceeded",
+        code: "over_email_send_rate_limit",
+        status: 429,
+      },
+    });
+
+    const formData = new FormData();
+    formData.set("email", "user@example.com");
+    formData.set("password", "password123");
+
+    const state = await signupAction(initialSignupFormState, formData);
+
+    expect(state.message).toBe(
+      "確認メールの送信回数が上限に達しました。しばらく時間をおいてから再度お試しください"
+    );
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
   it("それ以外のSupabaseエラーの場合は汎用のエラーメッセージを返す", async () => {
     signUpMock.mockResolvedValue({
       data: { session: null },

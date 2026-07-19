@@ -75,7 +75,9 @@ export async function signupAction(
     const message =
       error.code === "user_already_exists"
         ? "このメールアドレスは既に登録されています"
-        : "アカウント登録に失敗しました。時間をおいて再度お試しください";
+        : error.code === "over_email_send_rate_limit" || error.status === 429
+          ? "確認メールの送信回数が上限に達しました。しばらく時間をおいてから再度お試しください"
+          : "アカウント登録に失敗しました。時間をおいて再度お試しください";
     return { errors: {}, message };
   }
 
