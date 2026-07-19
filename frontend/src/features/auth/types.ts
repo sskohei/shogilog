@@ -1,4 +1,4 @@
-import type { LoginFieldErrors } from "@/features/auth/validation";
+import type { LoginFieldErrors, SignupFieldErrors } from "@/features/auth/validation";
 
 export type LoginFormState = {
   errors: LoginFieldErrors;
@@ -6,5 +6,15 @@ export type LoginFormState = {
 };
 
 export const initialLoginFormState: LoginFormState = {
+  errors: {},
+};
+
+export type SignupFormState = {
+  errors: SignupFieldErrors;
+  message?: string;
+  notice?: string;
+};
+
+export const initialSignupFormState: SignupFormState = {
   errors: {},
 };
