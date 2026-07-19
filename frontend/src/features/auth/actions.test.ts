@@ -128,10 +128,10 @@ describe("signupAction", () => {
     expect(signUpMock).not.toHaveBeenCalled();
   });
 
-  it("Supabaseがエラーを返した場合はエラーメッセージを返す", async () => {
+  it("メールアドレスが既に登録済みの場合は専用のエラーメッセージを返す", async () => {
     signUpMock.mockResolvedValue({
       data: { session: null },
-      error: { message: "User already registered" },
+      error: { message: "User already registered", code: "user_already_exists" },
     });
 
     const formData = new FormData();
@@ -146,6 +146,24 @@ describe("signupAction", () => {
       options: { emailRedirectTo: "https://shogilog.example.com/auth/callback" },
     });
     expect(state.message).toBe("このメールアドレスは既に登録されています");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("それ以外のSupabaseエラーの場合は汎用のエラーメッセージを返す", async () => {
+    signUpMock.mockResolvedValue({
+      data: { session: null },
+      error: { message: "redirect_to not allowed", code: "validation_failed" },
+    });
+
+    const formData = new FormData();
+    formData.set("email", "user@example.com");
+    formData.set("password", "password123");
+
+    const state = await signupAction(initialSignupFormState, formData);
+
+    expect(state.message).toBe(
+      "アカウント登録に失敗しました。時間をおいて再度お試しください"
+    );
     expect(redirectMock).not.toHaveBeenCalled();
   });
 

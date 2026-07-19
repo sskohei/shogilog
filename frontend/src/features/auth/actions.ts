@@ -66,8 +66,14 @@ export async function signupAction(
   });
 
   if (error) {
+    console.error("[signupAction] supabase.auth.signUp failed", {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+    });
+
     const message =
-      error.message === "User already registered"
+      error.code === "user_already_exists"
         ? "このメールアドレスは既に登録されています"
         : "アカウント登録に失敗しました。時間をおいて再度お試しください";
     return { errors: {}, message };
