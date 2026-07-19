@@ -70,6 +70,79 @@ function TagsMemoMockup() {
   );
 }
 
+function RatingTrendMockup() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-baseline justify-between">
+        <span className="text-sm font-medium text-muted-foreground">レーティング推移</span>
+        <span className="text-2xl font-bold tabular-nums">1580</span>
+      </div>
+      <svg viewBox="0 0 200 60" className="mt-4 h-16 w-full" preserveAspectRatio="none">
+        <polyline
+          points="0,50 40,42 80,45 120,28 160,20 200,10"
+          fill="none"
+          stroke="var(--chart-1)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
+        <span>3ヶ月前</span>
+        <span>今日</span>
+      </div>
+    </div>
+  );
+}
+
+function LongTermStatsMockup() {
+  const months = [
+    { label: "4月", height: "45%", color: "var(--chart-1)" },
+    { label: "5月", height: "60%", color: "var(--chart-2)" },
+    { label: "6月", height: "38%", color: "var(--chart-3)" },
+    { label: "7月", height: "80%", color: "var(--chart-4)" },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <span className="text-sm font-medium text-muted-foreground">月別対局数</span>
+      <div className="mt-4 flex h-20 items-end gap-3">
+        {months.map((month) => (
+          <div key={month.label} className="flex flex-1 flex-col items-center gap-2">
+            <div
+              className="w-full rounded-t"
+              style={{ height: month.height, backgroundColor: month.color }}
+            />
+            <span className="text-[11px] text-muted-foreground">{month.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KifPasteMockup() {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-lg bg-secondary p-3 font-mono text-[11px] leading-relaxed text-muted-foreground">
+        手合割：平手
+        <br />
+        ▲7六歩　△3四歩
+        <br />
+        ▲2六歩　△8四歩
+      </div>
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-sm">
+        <span>対局日時</span>
+        <span className="text-muted-foreground">2026/07/18 21:03</span>
+      </div>
+      <div className="flex items-center justify-between pt-1 text-sm">
+        <span>結果</span>
+        <ResultBadge result="win" />
+      </div>
+    </div>
+  );
+}
+
 const SHOWCASE_FEATURES = [
   {
     heading: "将棋ウォーズも、将棋クエストも、ひとつの記録に。",
@@ -89,22 +162,25 @@ const SHOWCASE_FEATURES = [
     reverse: false,
     mockup: <TagsMemoMockup />,
   },
+  {
+    heading: "上がった日も、下がった日も、一本の線でわかる。",
+    body: "プラットフォームごとのレーティング・段級位の推移をグラフで確認。伸び悩みも成長も、ひと目で振り返れます。",
+    reverse: true,
+    mockup: <RatingTrendMockup />,
+  },
+  {
+    heading: "先月の10局も、去年の100局も、傾向としてつながる。",
+    body: "月ごとの対局数や先後別の勝率など、長期的な傾向を可視化。積み重ねた対局が、次の一手のヒントになります。",
+    reverse: false,
+    mockup: <LongTermStatsMockup />,
+  },
+  {
+    heading: "コピーするだけで、対局日時も結果も、自動で記録。",
+    body: "棋譜をクリップボードから貼り付けるだけで、対局日時や結果を自動入力。入力の手間を省き、記録を続けやすくします。",
+    reverse: true,
+    mockup: <KifPasteMockup />,
+  },
 ] as const;
-
-const MORE_FEATURES = [
-  {
-    title: "レーティング推移",
-    description: "プラットフォームごとのレーティング・段級位の推移をグラフで確認できます。",
-  },
-  {
-    title: "長期的な統計",
-    description: "月ごとの対局数や先後別の勝率など、長期的な傾向を可視化します。",
-  },
-  {
-    title: "KIF形式の棋譜貼り付け",
-    description: "棋譜をクリップボードから貼り付けるだけで、対局日時や結果を自動入力できます。",
-  },
-];
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -198,18 +274,6 @@ export default async function Home() {
             </div>
           </div>
         ))}
-      </section>
-
-      {/* ---------- More features ---------- */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="grid gap-4 md:grid-cols-3">
-          {MORE_FEATURES.map((feature) => (
-            <div key={feature.title} className="space-y-1 rounded-lg border border-border p-4">
-              <h3 className="text-sm font-medium">{feature.title}</h3>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ---------- Closing CTA ---------- */}
